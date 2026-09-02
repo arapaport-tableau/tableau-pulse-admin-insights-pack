@@ -8,6 +8,11 @@ The goal is speed to value. Pulse asks people to think in metrics, and most team
 blank page. Starting them on real data they already care about (how their own site is being used)
 lets them feel what Pulse does the day they turn it on.
 
+> **Most people should use the app, not the command line.** Download this tool, double-click the
+> launcher, and follow three on-screen steps. No terminal, no commands, no config files. Jump to
+> [Using the app](#using-the-app). The command line is only for people who prefer a terminal or are
+> scripting it across many sites ([CLI.md](CLI.md)).
+
 This is an unofficial community tool. It is not built or supported by Tableau or Salesforce.
 
 ## What you get

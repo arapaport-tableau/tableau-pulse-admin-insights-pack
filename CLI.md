@@ -8,6 +8,11 @@ The app and the command line share the same engine (`engine.py`), so they behave
 same defaults, same safety guarantees, same per-site state files. Anything you do with one, you
 can undo with the other.
 
+> **You do not need a config file.** Every command prompts you for the four connection details
+> (server URL, site name, PAT name, PAT secret), one at a time, the moment you run it. The optional
+> `config.json` (see the [command reference](#command-reference)) only saves you re-typing the
+> first three on repeat runs. Skip it and just run the commands below.
+
 New words you'll see, in plain English:
 - **Terminal** (or **Command Prompt** on Windows): a plain text window where you type commands.
 - **Personal Access Token (PAT)**: a password-like key that lets the tool sign in to your site on
@@ -161,9 +166,10 @@ that already existed is left untouched.
 | `deploy.py --uninstall --yes` | Skip the confirmation prompt when uninstalling without a saved record. |
 | `deploy.py --uninstall --force` | Override the safety check that uninstall matches the site you created on. |
 
-To avoid retyping connection details every run, copy `config.example.json` to `config.json` (which
-is ignored by Git and never uploaded) and fill in `server_url`, `site_name`, and `pat_name`. The
-secret is always typed at the hidden prompt and is never saved to a file.
+**The config file is optional.** Without it, every command simply prompts you for all four
+connection details. If you run often and want to stop retyping, copy `config.example.json` to
+`config.json` (which is ignored by Git and never uploaded) and fill in `server_url`, `site_name`,
+and `pat_name`. The secret is always typed at the hidden prompt and is never saved to a file.
 
 ## If something goes wrong
 

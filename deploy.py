@@ -160,7 +160,14 @@ def cli_uninstall(server, server_url, token, args):
 
 # ── Main ────────────────────────────────────────────────────────────────────────
 def main():
-    ap = argparse.ArgumentParser(description="Deploy the Pulse Admin Insights Starter Pack.")
+    ap = argparse.ArgumentParser(
+        description="Deploy the Pulse Admin Insights Starter Pack.",
+        epilog="No config file is required. Run any command and it prompts you for the four "
+               "connection details (server URL, site name, PAT name, PAT secret) one at a time. "
+               "A config.json only exists to save you re-typing the first three across runs; "
+               "the PAT secret is always typed at a hidden prompt and never saved. "
+               "Most people should use the app instead of the command line -- see README.md.",
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--dry-run", action="store_true", help="show the plan (and validate filters), write nothing")
     ap.add_argument("--follow", action="store_true", help="subscribe the running user to every metric")
     ap.add_argument("--group", metavar="NAME", nargs="?", const=engine.DEFAULT_GROUP_NAME,
