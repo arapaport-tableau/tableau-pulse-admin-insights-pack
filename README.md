@@ -152,8 +152,9 @@ It will ask you four things, one at a time:
 - **Server URL**: paste the server address from Step 3.
 - **Site content URL**: type the site name from Step 3.
 - **PAT name**: type the token name from Step 2.
-- **PAT secret**: paste the secret from Step 2. (It stays hidden as you paste. That is normal.
-  Just press Enter.)
+- **PAT secret**: paste the secret from Step 2, then press Enter. Nothing appears on screen as you
+  paste. That is on purpose, so no one can read your secret over your shoulder. After you press
+  Enter, the tool prints "Got it" to confirm it received your input.
 
 Then it prints a plan: the nine metrics, and for each one whether it would be **created** (new) or
 **adopted** (already exists and matches). If you see errors here, jump to

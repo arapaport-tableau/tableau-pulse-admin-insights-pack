@@ -72,7 +72,15 @@ def load_connection():
         if val:
             return str(val).strip()
         if secret:
-            return getpass.getpass(prompt).strip()
+            # getpass never echoes (so the secret can't be seen or screen-shared).
+            # Loop until something is entered and confirm receipt, so it's clear the
+            # keystrokes registered even though nothing shows while typing.
+            while True:
+                entered = getpass.getpass(prompt).strip()
+                if entered:
+                    print(f"  Got it (received {len(entered)} characters; input stays hidden).")
+                    return entered
+                print("  Nothing entered. Paste the secret and press Enter.")
         entered = input(prompt).strip()
         return entered or (default or "")
 
@@ -80,7 +88,8 @@ def load_connection():
                       "Server URL (e.g. https://10ax.online.tableau.com): ").rstrip("/")
     site_name = pick("SITE_NAME", "site_name", "Site content URL: ")
     pat_name = pick("PAT_NAME", "pat_name", "PAT name: ")
-    pat_secret = pick("PAT_SECRET", "pat_secret", "PAT secret (hidden): ", secret=True)
+    pat_secret = pick("PAT_SECRET", "pat_secret",
+                      "PAT secret (typing stays hidden, then press Enter): ", secret=True)
     return server_url, site_name, pat_name, pat_secret
 
 
