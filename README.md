@@ -15,6 +15,9 @@ lets them feel what Pulse does the day they turn it on.
 
 This is an unofficial community tool. It is not built or supported by Tableau or Salesforce.
 
+Want the backstory on why I built this and how it fits the way Pulse works? Read
+[The Tableau Pulse Starter Pack That Installs Itself](docs/blog-post.md).
+
 ## What you get
 
 Nine trend metrics across three themes, all on event-log sources that keep real history, so every

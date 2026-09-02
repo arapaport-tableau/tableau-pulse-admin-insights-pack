@@ -1,5 +1,7 @@
 # The Tableau Pulse Starter Pack That Installs Itself
 
+*Run it once and it provisions nine prebuilt Pulse metrics on data every Tableau Cloud site already has, in a few minutes, no data prep.*
+
 ## Start here
 
 If you've used Tableau, you know Dashboard Accelerators. Prebuilt dashboards for common scenarios that you drop onto your data and get something useful right away. A curated starting point instead of a blank canvas.
