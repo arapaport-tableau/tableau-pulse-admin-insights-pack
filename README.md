@@ -55,9 +55,6 @@ admin, send this list to whoever manages your Tableau site and ask them to confi
 2. **Tableau Pulse** is enabled.
 3. **VizQL Data Service** is enabled.
 
-Your site also needs to be on **Tableau Cloud version 2024.2 or newer**. Most sites already are.
-If it is older, the tool will tell you clearly and stop.
-
 ## Step 2: Create your Personal Access Token (your sign-in key)
 
 1. Sign in to your Tableau Cloud site in a web browser.
