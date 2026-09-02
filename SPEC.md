@@ -1,6 +1,6 @@
-# Pulse Admin Insights Pack — v1 Spec (planning)
+# Pulse Admin Insights Pack — v1 Spec
 
-Status: planning. Nothing built yet. Repo name and final location TBD.
+Status: shipped (v1). Public repo: `arapaport-tableau/tableau-pulse-admin-insights-pack`.
 
 ## Purpose
 
@@ -21,16 +21,19 @@ a portable pack possible. The definitions reference field names that resolve on 
 site; the only per-site variable is each source's LUID, which the tool looks up by
 name at deploy time.
 
-Sources used: TS Events, Viz Load Times, Job Performance, Subscriptions, TS Users,
-Site Content. (Also present but unused in v1: Groups, Permissions, Tokens.)
+Sources used in v1: **TS Events, Viz Load Times, Job Performance** — the three
+append-style event logs that retain real history. Current-state snapshot sources
+(TS Users, Site Content, Subscriptions, Groups, Permissions, Tokens) are held out;
+see "Deferred" below.
 
 ## Design principles
 
 - Easy above all. If a capability adds risk or a licensing dependency, it does not go in v1.
 - REST API only. No MCP dependency. Runs on any site with a token.
 - No secrets in the repo, ever.
-- Safe against production: dry-run first, idempotent creates, manifest-based uninstall.
-- Only ever creates net-new Pulse definitions. Never touches data, content, or settings.
+- Safe against production: dry-run first, adopt-don't-duplicate creates, state-based uninstall.
+- Only ever creates net-new Pulse definitions. Never touches data, content, or settings, and
+  never edits a definition it did not create.
 
 ## Auth model
 
@@ -43,23 +46,43 @@ Site Content. (Also present but unused in v1: Groups, Permissions, Tokens.)
   metric-creation site setting enabled. This varies by site config, so preflight detects and
   reports the running user's actual capability rather than asserting a fixed requirement.
 
+## Version floor
+
+Tableau Cloud 2024.2 (REST API 3.24) or newer. The Pulse definition/metric/subscription
+endpoints the tool calls do not exist on older releases; preflight checks and stops with a
+version hint if they are missing. VizQL Data Service must also be enabled (used for field
+resolution and filter validation).
+
 ## Run model (CLI)
 
-- `deploy.py --dry-run` — sign in, confirm Admin Insights is enabled, resolve source LUIDs,
-  confirm required fields exist, check for name collisions, print the full plan. No writes.
-- `deploy.py` — create the definitions. Idempotent: skip any that already exist by name so
-  re-running is safe. Write `manifest.json` recording every created ID.
-- `deploy.py --with-metrics --follow` — also seed a default metric per definition and subscribe
-  the running user, so they see a live feed immediately. Off by default (base run is inert).
-- `deploy.py --group "Name"` — create-or-reuse a group and batch-subscribe it to every metric.
-  Onboarding a person becomes "add them to the group." Recommended run for teams.
-- `deploy.py --uninstall` — read the manifest and delete only what the tool created. Clean rollback.
+One script, `deploy.py`. Everything is a flag on it — there are no separate scripts or steps.
+
+- `deploy.py --dry-run` — sign in, preflight (site role, Pulse reachable, VDS enabled), resolve
+  source LUIDs, resolve every field, match each metric against what already exists (by name **and**
+  full specification), count the rows each `confirm:true` filter matches and flag any empties, and
+  print the full plan. No writes.
+- `deploy.py` — create the definitions. Idempotent by **spec signature**: a metric that already
+  exists with the same specification is adopted rather than duplicated (a rename of one of ours
+  still matches). On create the tool also sets the metric to week-to-date and writes the
+  definition description. Writes per-site state to `manifest.<site_id>.json`.
+- `deploy.py --group [NAME]` — create-or-reuse a group (default "Admin Insights Metrics") and
+  batch-subscribe it to every metric. Group-follow is the recommended run for teams and doubles as
+  the ownership marker for the pack. Onboarding a person becomes "add them to the group." The tool
+  never adds members itself.
+- `deploy.py --follow` — also subscribe the running user, so they see a live feed immediately.
+- `deploy.py --on-conflict {skip,suffix}` — when a name exists with a **different** spec: skip it
+  (default, never mutate a foreign definition) or create ours under a suffixed name.
+- `deploy.py --uninstall [--dry-run]` — delete only what a prior run created (from per-site state),
+  unfollow any it merely adopted, and delete the group only if the tool created it. A site-match
+  guard prevents running against the wrong site (`--force` to override). If the state file is gone,
+  it falls back to discovering the pack from the follow group and asks to confirm before deleting
+  (`--yes` to skip the prompt), warning that in that mode it cannot distinguish created from adopted.
 
 ## Data source architecture decision
 
 Pulse's cross-metric experience (related metrics, correlations, asking across metrics) is
-scoped to metrics that share the same published data source. Our metrics span six Admin
-Insights sources, so out of the box they form six conversational clusters, not one.
+scoped to metrics that share the same published data source. Our v1 metrics span three Admin
+Insights sources, so out of the box they form three conversational clusters, not one.
 
 Options considered:
 - Multi-table / composed source: rejected. Mixed grains cause join fan-out and ambiguous
@@ -70,9 +93,9 @@ Options considered:
   problem. A normal extract refresh cannot re-run the aggregation, so it only updates on re-run.
 
 Decision for v1: cluster by native source, lead with adoption. The flagship adoption story is
-almost entirely TS Events, so those metrics already share one source and form one rich Pulse
-conversation with zero data engineering. Performance, Reliability, and Licensing are each their
-own single-source cluster. Conversation works within each theme; document that scope honestly.
+entirely TS Events, so those five metrics already share one source and form one rich Pulse
+conversation with zero data engineering. Performance and Reliability are each their own
+single-source cluster. Conversation works within each theme; document that scope honestly.
 
 A fully unified "one conversation across everything" source (scripted Hyper or a Prep flow for
 Data Management customers) is deferred to an explicit advanced option in a later version, with
@@ -82,34 +105,37 @@ the freshness and licensing tradeoffs spelled out.
 
 Nine metrics, all basic-spec. Basic specs support definition filters on dimensions, so
 "count where [dimension] = X" is fully supported and scriptable. No advanced expressions in v1.
+All nine default to week-to-date (`GRANULARITY_BY_WEEK`, current partial period).
 
 **MVP scope rule: event/activity-log sources only.** TS Events, Viz Load Times, and Job
 Performance are append-style logs that retain real history, so every metric trends honestly
 and compares period over period the day Pulse is turned on. Current-state snapshot sources
-(TS Users, Site Content, Subscriptions) full-refresh daily and keep no history, so snapshot
-metrics cannot trend and cohort metrics undercount older periods. Those are held for a later
-version (see "Deferred" below), which keeps the MVP defensible to any Tableau Cloud admin.
+full-refresh daily and keep no history, so snapshot metrics cannot trend and cohort metrics
+undercount older periods. Those are held for a later version (see "Deferred").
 
-Filter string values marked (confirm) must be verified against live data at build time
-via query-datasource (exact Event Name / Event Type / Job Type / Status Code Type strings).
+Adjustable dimensions are chosen **per metric**, not per cluster: each list is drawn from fields
+that return real values for that metric, omits any dimension pinned by the metric's own filter,
+and favors low/medium-cardinality categoricals. Distinct-count metrics (Active Users, Unique
+Content Accessed) only break down cleanly on an attribute of the thing counted, so their lists
+are deliberately narrow — see METRICS.md.
 
 ### A. Adoption — TS Events, time = Event Date (flagship single conversation)
-Adjustable dims: Project Name, Actor Site Role, Actor License Role, Item Type.
-1. Active Users — COUNT_DISTINCT [Actor User Name] — up is good — trend
-2. Site Logins — SUM [Number of Events], filter Event Name = Login (verified live) — up is good — trend
-3. Content Views — SUM [Number of Events], filter Item Type = View + Event Type = Access (verified live) — up is good — trend
-4. Unique Content Accessed — COUNT_DISTINCT [Item LUID], filter Event Type = Access (verified live) — up is good — trend
-5. New Content Published — SUM [Number of Events], filter Event Type = Publish (verified live; Create is admin object creation, not content) — up is good — trend
+1. Active Users — COUNT_DISTINCT [Actor User Name], no filter — up is good. Dims: Actor Site Role, Actor License Role.
+2. Site Logins — COUNT [Event Id], filter Event Name = Login (verified) — up is good. Dims: Actor Site Role, Actor License Role.
+3. Content Views — COUNT [Event Id], filter Item Type = View + Event Type = Access (verified) — up is good. Dims: Project Name, Workbook Name, Item Owner Email, Actor Site Role, Actor License Role.
+4. Unique Content Accessed — COUNT_DISTINCT [Item LUID], filter Event Type = Access (verified) — up is good. Dims: Item Type, Project Name.
+5. New Content Published — COUNT [Event Id], filter Event Type = Publish (verified) — up is good. Dims: Item Type, Project Name, Item Owner Email, Actor Site Role, Actor License Role.
 
 ### B. Performance — Viz Load Times, time = Request Time
-Adjustable dims: Project Name, Item Type, Workbook Name.
-6. Average View Load Time — AVG [Duration] — down is good — trend
-7. Load Errors — COUNT [Request ID], filter Status Code Type in (Client errors, Server errors) (confirm) — down is good — trend
+6. Average View Load Time — AVG [Duration], no filter — down is good. Dims: Project Name, Workbook Name, Item Type, Status Code Type, Item Owner Email.
+7. Load Errors — COUNT [Request ID], filter Status Code Type in (Client errors, Server errors) (confirm) — down is good. Dims: Status Code Type, Project Name, Workbook Name, Item Type, Item Owner Email.
 
 ### C. Reliability — Job Performance, time = Started At
-Adjustable dims: Job Type, Final Job Result, Schedule Name.
-8. Extract Refresh Failures — COUNT [Job ID], filter Final Job Result = Failed + Job Type = Extract Refresh (confirm) — down is good — trend
-9. Average Job Duration — AVG [Job Duration] — down is good — trend
+8. Extract Refresh Failures — COUNT [Job ID], filter Final Job Result = Failed + Job Type in (RefreshExtracts, RefreshExtractsViaBridge) (confirmed — Admin Insights uses raw job-type enums; there is no "Extract Refresh" value) — down is good. Dims: Schedule Name, Item Name, Item Type, Owner Email, Was Manual Run, Parent Project Name.
+9. Average Job Duration — AVG [Job Duration], no filter — down is good. Dims: Job Type, Schedule Name, Item Type, Owner Email, Final Job Result, Parent Project Name.
+
+Filter values marked (confirm) are set to the standard English Admin Insights values and are
+row-count-validated in `--dry-run` against live data.
 
 ### Deferred (not in the MVP)
 
@@ -119,7 +145,6 @@ daily: snapshot metrics have no source history to trend, and cohort metrics carr
 survivorship bias. Better served as point-in-time readouts in the Admin Insights views.
 Candidates for a later version, likely with a purpose-built fact source that banks daily
 snapshots.
-- Data Source Connections (TS Events) — narrower governed-data signal, second-tier for adoption
 - New Users, Content Growth — cohort trends with survivorship bias
 - New Subscriptions & Metric Follows, Subscriptions Delivered — Subscriptions shape can't count delivery over time (Last Sent is one timestamp per subscription)
 - Occupied Licenses, Remaining Licenses, Average Days Since Last Login, Site Storage Used — snapshot state, no source history; license fields are FIXED site-level calcs Pulse may reject
@@ -132,27 +157,31 @@ Refresh Success Rate %.
 
 - English field names only. Non-English sites may not resolve. Documented; locale map is future work.
 - Admin Insights must be enabled (site setting). Preflight detects absence and links to the fix.
+- Targets the `... (local)` Admin Insights sources; on a name collision the tool prefers the
+  Admin Insights project and warns in the plan.
 - MVP uses only event-log sources, so every metric has genuine back-history within the Admin
-  Insights retention window. No snapshot metrics ship in v1, so there is no flat-line caveat.
+  Insights retention window (~90 days rolling). No snapshot metrics ship in v1, so there is no
+  flat-line caveat. New metrics take a couple of minutes to index before they populate.
 
 ## Repo structure
 
 ```
 <repo>/
-  deploy.py              # sign in, preflight, create, seed, group, uninstall
-  definitions/           # one JSON per metric (portable spec)
-  config.example.json    # server_url, site_name, pat_name, pat_secret (real one gitignored)
+  deploy.py              # the whole tool: connect, preflight, plan, create, group, follow, uninstall
+  metrics.manifest.json  # the metric definitions (intermediate representation deploy.py maps to Pulse)
+  config.example.json    # server_url, site_name, pat_name (real config.json gitignored)
   requirements.txt       # tableauserverclient, requests
   METRICS.md             # what each metric tells you and why it matters (mindset-shift doc)
-  README.md              # prereqs, quickstart, safety notes, trend-vs-snapshot caveat, disclaimer
-  LICENSE                # MIT (public repo)
-  .gitignore             # config.json, manifest.json, __pycache__
+  metrics-catalog.html   # visual catalog of the pack
+  README.md              # prereqs, quickstart, safety notes, limits, disclaimer
+  LICENSE                # public repo
+  .gitignore             # config.json, manifest.json, manifest.*.json, __pycache__
 ```
 
-## Open items
+## Resolved decisions
 
-- Repo name and final location.
-- Advanced-definition probe (deferred; only needed if we build the advanced tier).
-- Confirm filter string values against live data at build time.
-- Whether `--group` or `--with-metrics --follow` is the headline recommended run in the README.
-- Public unofficial-tool disclaimer wording.
+- Single script (`deploy.py`), single metric IR (`metrics.manifest.json`). No `definitions/` dir.
+- `--group` is the headline recommended run; group-follow is also the ownership marker (no name prefix).
+- Duplicate handling: adopt by spec signature; skip same-name-different-spec by default (`--on-conflict suffix` to override).
+- Per-site state (`manifest.<site_id>.json`) with a site-match guard on uninstall; discovery-based uninstall as fallback.
+- Filter string values confirmed against live data and revalidated in every `--dry-run`.
