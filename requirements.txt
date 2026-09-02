@@ -1,0 +1,2 @@
+tableauserverclient>=0.41
+requests>=2.31

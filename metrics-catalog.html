@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pulse Admin Insights Starter Pack — Metric Catalog</title>
+<style>
+  :root{
+    --blue:#0176d3; --blue-dark:#014486; --ink:#181818; --muted:#5c5c5c;
+    --line:#e5e5e5; --bg:#f3f3f3; --card:#ffffff; --good:#2e844a; --watch:#ba0517;
+    --chip:#eef4fb; --chip-ink:#0b5cab; --chip2:#f0f7f2; --chip2-ink:#1a5c33;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.5;}
+  .wrap{max-width:1040px;margin:0 auto;padding:32px 20px 64px;}
+  header.top{border-left:5px solid var(--blue);padding:6px 0 6px 18px;margin-bottom:8px;}
+  header.top h1{margin:0;font-size:26px;letter-spacing:-.2px;}
+  header.top p{margin:6px 0 0;color:var(--muted);max-width:760px;}
+  .scopebar{background:#fff;border:1px solid var(--line);border-radius:10px;
+    padding:14px 18px;margin:18px 0 26px;display:flex;gap:26px;flex-wrap:wrap;}
+  .scopebar div{font-size:13px;}
+  .scopebar b{display:block;font-size:22px;color:var(--blue-dark);line-height:1.2;}
+  .note{background:#fbfbfb;border:1px solid var(--line);border-radius:10px;padding:14px 18px;
+    font-size:13.5px;color:var(--muted);margin-bottom:28px;}
+  .note b{color:var(--ink);}
+  h2.cluster{font-size:15px;text-transform:uppercase;letter-spacing:1px;color:var(--blue-dark);
+    margin:34px 0 4px;}
+  .cluster-src{font-size:13px;color:var(--muted);margin:0 0 14px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:20px 22px;margin-bottom:16px;box-shadow:0 1px 2px rgba(0,0,0,.04);}
+  .card h3{margin:0;font-size:18px;}
+  .dir{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+    padding:3px 8px;border-radius:20px;margin-left:10px;vertical-align:middle;}
+  .dir.up{background:var(--chip2);color:var(--good);}
+  .dir.down{background:#fdeeee;color:var(--watch);}
+  .why{color:var(--muted);margin:6px 0 16px;font-size:14px;}
+  .def{background:#fafbfc;border:1px solid var(--line);border-radius:8px;padding:12px 14px;
+    font-size:13px;margin-bottom:14px;}
+  .def code{background:#eef1f4;border-radius:4px;padding:1px 5px;font-size:12.5px;}
+  .def .row{display:flex;gap:10px;padding:3px 0;}
+  .def .k{color:var(--muted);min-width:130px;font-weight:600;}
+  .seg{margin:14px 0 4px;}
+  .seg .lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+    color:var(--muted);margin-bottom:6px;}
+  .chip{display:inline-block;background:var(--chip);color:var(--chip-ink);border-radius:20px;
+    padding:4px 11px;font-size:12.5px;margin:0 6px 6px 0;}
+  .chip.ins{background:var(--chip2);color:var(--chip2-ink);}
+  .thin{font-style:italic;color:var(--muted);font-size:12.5px;margin:2px 0 0;}
+  .read{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:16px;
+    border-top:1px solid var(--line);padding-top:14px;}
+  .read .col .h{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+    color:var(--blue-dark);margin-bottom:5px;}
+  .read .col p{margin:0;font-size:13px;color:#333;}
+  @media(max-width:760px){.read{grid-template-columns:1fr;}}
+  .deferred{margin-top:40px;background:#fff;border:1px dashed #cfcfcf;border-radius:12px;
+    padding:20px 22px;}
+  .deferred h2{margin:0 0 8px;font-size:15px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);}
+  .deferred ul{margin:8px 0 0;padding-left:18px;font-size:13.5px;color:var(--muted);}
+  .deferred li{margin-bottom:5px;}
+  footer{margin-top:36px;font-size:12px;color:#999;text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <h1>Pulse Admin Insights Starter Pack</h1>
+    <p>Nine prebuilt Tableau Pulse metrics on the standard Admin Insights data sources that ship
+    with every Tableau Cloud site. No data prep. Deploy and go.</p>
+  </header>
+
+  <div class="scopebar">
+    <div><b>9</b>metrics</div>
+    <div><b>3</b>clusters, one Pulse conversation each</div>
+    <div><b>0</b>data prep steps</div>
+    <div><b>100%</b>trend metrics with real history</div>
+  </div>
+
+  <div class="note">
+    <b>Why only these nine.</b> Every metric sits on an event or activity log (TS Events, Viz
+    Load Times, Job Performance). Those sources retain real history, so each metric trends
+    honestly and compares period over period the day you turn Pulse on. Current-state snapshot
+    sources (licensing, storage, subscriptions) full-refresh daily and keep no history, so
+    they are held for a later version and listed at the bottom.<br><br>
+    <b>Breakdowns are set per metric.</b> Each metric carries only the dimensions that return
+    real values for it, favoring low and medium cardinality fields so Pulse top-contributor
+    insights stay clean. A dimension the metric already filters on is left off.
+  </div>
+
+  <div id="app"></div>
+
+  <div class="deferred">
+    <h2>Held for a later version</h2>
+    <p style="font-size:13.5px;color:#666;margin:0 0 6px;">Cut for data-shape reasons, not lack
+    of value. These sit on current-state snapshot sources with no history to trend, or carry
+    survivorship bias on a creation-date cohort. Better served as point-in-time readouts in the
+    Admin Insights views, or in a later tier built on a purpose-made fact source.</p>
+    <ul>
+      <li><b>Data Source Connections</b> (TS Events) — narrower governed-data signal, second-tier for the adoption story</li>
+      <li><b>New Users</b>, <b>Content Growth</b> — cohort trends with survivorship bias</li>
+      <li><b>New Subscriptions &amp; Metric Follows</b>, <b>Subscriptions Delivered</b> — Subscriptions shape can't count delivery over time</li>
+      <li><b>Occupied Licenses</b>, <b>Remaining Licenses</b>, <b>Average Days Since Last Login</b>, <b>Site Storage Used</b> — snapshot state, no source history</li>
+    </ul>
+    <p style="font-size:13.5px;color:#666;margin:12px 0 0;"><b>Advanced tier</b> (needs calculated
+    thresholds or ratios): Slow Loads (&gt;10s), Inactive Users (&gt;90 days), Stale Content
+    (&gt;90 days), License Utilization %, Refresh Success Rate %.</p>
+  </div>
+
+  <footer>Planning artifact. Field names and filter values are validated against live data at build time.</footer>
+</div>
+
+<script>
+// Every MVP metric is a trend metric, so all carry the full Pulse trend insight set.
+const TREND_INSIGHTS = [
+  "Current trend",
+  "Period-over-period change",
+  "Unusual change / anomaly",
+  "Top contributors",
+  "Biggest movers",
+  "Record high / low",
+  "Correlations (within cluster)"
+];
+
+const CLUSTERS = [
+  {key:"adoption", title:"Adoption", source:"TS Events", src:"Source: TS Events. Flagship single-source conversation — all five adoption metrics correlate with each other."},
+  {key:"performance", title:"Performance", source:"Viz Load Times", src:"Source: Viz Load Times."},
+  {key:"reliability", title:"Reliability", source:"Job Performance", src:"Source: Job Performance."}
+];
+
+const METRICS = [
+  {
+    key:"active-users", name:"Active Users", cluster:"adoption", dir:"up",
+    why:"The single clearest adoption signal. Distinct people doing anything on the site over the period.",
+    measure:"COUNT DISTINCT [Actor User Name]", time:"Event Date", filters:"none",
+    dims:["Actor Site Role","Actor License Role","Item Type","Event Type","Project Name"],
+    shows:"Distinct people who did anything on the site during the period.",
+    interpret:"The headline reach number. Rising means more of the org is touching Tableau; flat while headcount grows means adoption has stalled. Break out by Site Role to see whether the growth is Creators or Viewers.",
+    value:"The one number to put in front of a sponsor. It answers “is this being used” without an argument."
+  },
+  {
+    key:"site-logins", name:"Site Logins", cluster:"adoption", dir:"up",
+    why:"Login frequency shows whether Tableau is part of the daily routine or an occasional visit.",
+    measure:"SUM [Number of Events]", time:"Event Date", filters:"Event Name = Login",
+    dims:["Actor Site Role","Actor License Role"],
+    thin:"Intentionally thin. Sign-in events aren't performed against content, so Project, Item Type, and Workbook are null. Role and license are the only breakdowns that carry meaning.",
+    shows:"Count of sign-in events over the period.",
+    interpret:"Read alongside Active Users. High logins per active user means Tableau is a habit; low means people sign in only when pushed. A dip here often leads a dip in everything downstream.",
+    value:"An early warning. Login frequency tends to soften before consumption does."
+  },
+  {
+    key:"content-views", name:"Content Views", cluster:"adoption", dir:"up",
+    why:"How much content is actually being consumed. The core value-delivered metric.",
+    measure:"SUM [Number of Events]", time:"Event Date", filters:"Item Type = View, Event Type = Access",
+    dims:["Project Name","Workbook Name","Item Owner Email","Actor Site Role","Actor License Role"],
+    shows:"View-access events, the core consumption signal.",
+    interpret:"The value-delivered number. Break out by Project or Workbook to see what people actually use. A rising total concentrated in a few workbooks is a very different story than broad use across the library.",
+    value:"Ties platform spend to something tangible: content people come back to."
+  },
+  {
+    key:"unique-content-accessed", name:"Unique Content Accessed", cluster:"adoption", dir:"up",
+    why:"Breadth of use. A high view count on a shrinking set of content is a different story than broad use.",
+    measure:"COUNT DISTINCT [Item LUID]", time:"Event Date", filters:"Event Type = Access",
+    dims:["Item Type","Project Name","Actor Site Role","Actor License Role"],
+    shows:"Distinct content items accessed during the period.",
+    interpret:"Breadth of the library in use. Compare to Content Views: lots of views on few items means a small core is carrying the whole site. Rising breadth means new content is finding an audience.",
+    value:"Flags over-reliance on a handful of dashboards, and shows whether new content lands."
+  },
+  {
+    key:"new-content-published", name:"New Content Published", cluster:"adoption", dir:"up",
+    why:"Creation activity. Shows whether the community is producing, not just consuming.",
+    measure:"SUM [Number of Events]", time:"Event Date", filters:"Event Type = Publish",
+    dims:["Item Type","Project Name","Item Owner Email","Actor Site Role","Actor License Role"],
+    shows:"Content-creation events over the period.",
+    interpret:"The supply side of the platform. Break out by Item Type to see whether it's workbooks, data sources, or views. A stall here eventually shows up downstream as stale content.",
+    value:"Tells you whether the community is self-sustaining or still dependent on a central team."
+  },
+  {
+    key:"avg-view-load-time", name:"Average View Load Time", cluster:"performance", dir:"down",
+    why:"The experience users actually feel. Slow loads are the fastest way to lose adoption.",
+    measure:"AVG [Duration] (seconds)", time:"Request Time", filters:"none",
+    dims:["Project Name","Workbook Name","Item Type","Status Code Type","Item Owner Email"],
+    shows:"Mean request duration, in seconds.",
+    interpret:"The speed users feel. Watch the trend more than the absolute value; a rising average is the early sign of trouble. Break out by Workbook to find the offenders. Averages hide outliers, so pair it with Load Errors.",
+    value:"Slow dashboards are the quiet adoption killer. This makes the pain visible before users complain."
+  },
+  {
+    key:"load-errors", name:"Load Errors", cluster:"performance", dir:"down",
+    why:"Requests that failed to render. A reliability signal separate from speed.",
+    measure:"COUNT [Request ID]", time:"Request Time", filters:"Status Code Type in (Client errors, Server errors)",
+    dims:["Status Code Type","Project Name","Workbook Name","Item Type","Item Owner Email"],
+    thin:"Status Code Type is kept as a breakdown even though it's filtered, because the filter admits two values and splitting client vs server errors is diagnostic.",
+    shows:"Failed render requests (4xx and 5xx).",
+    interpret:"Reliability, separate from speed. Split Client vs Server errors: client errors often mean permissions or broken links, server errors mean capacity or backend. A spike tied to one project points straight at the cause.",
+    value:"Turns “it's broken” tickets into a number you can watch and act on before users notice."
+  },
+  {
+    key:"extract-refresh-failures", name:"Extract Refresh Failures", cluster:"reliability", dir:"down",
+    why:"Failed refreshes mean stale dashboards. The most actionable admin health metric.",
+    measure:"COUNT [Job ID]", time:"Started At", filters:"Final Job Result = Failed, Job Type = Extract Refresh",
+    dims:["Schedule Name","Item Name","Item Type","Owner Email","Was Manual Run","Parent Project Name"],
+    shows:"Count of failed extract-refresh jobs.",
+    interpret:"The most actionable health metric in the pack. Every failure is a dashboard showing stale data. Break out by Schedule or Item to find the repeat offenders. Was Manual Run separates one-off retries from scheduled failures.",
+    value:"Directly protects trust in the data. A dashboard that's quietly stale does more damage than one that's plainly down."
+  },
+  {
+    key:"avg-job-duration", name:"Average Job Duration", cluster:"reliability", dir:"down",
+    why:"Rising durations signal capacity pressure before it turns into failures.",
+    measure:"AVG [Job Duration] (seconds)", time:"Started At", filters:"none",
+    dims:["Job Type","Schedule Name","Item Type","Owner Email","Final Job Result","Parent Project Name"],
+    shows:"Mean background-job runtime, in seconds.",
+    interpret:"A capacity gauge. Rising durations mean jobs are queuing and competing before they start failing outright. Break out by Job Type to separate extracts from flows and subscriptions.",
+    value:"Gives you lead time. You see pressure building and can reschedule or resize before refreshes start to fail."
+  }
+];
+
+const app = document.getElementById("app");
+CLUSTERS.forEach(cl => {
+  const h = document.createElement("h2");
+  h.className = "cluster"; h.textContent = cl.title; app.appendChild(h);
+  const s = document.createElement("p");
+  s.className = "cluster-src"; s.textContent = cl.src; app.appendChild(s);
+
+  METRICS.filter(m => m.cluster === cl.key).forEach(m => {
+    const card = document.createElement("div");
+    card.className = "card";
+    const dirLbl = m.dir === "up" ? "Up is good" : "Down is good";
+    const dims = m.dims.map(d => `<span class="chip">${d}</span>`).join("");
+    const ins = TREND_INSIGHTS.map(i => `<span class="chip ins">${i}</span>`).join("");
+    card.innerHTML = `
+      <h3>${m.name}<span class="dir ${m.dir}">${dirLbl}</span></h3>
+      <p class="why">${m.why}</p>
+      <div class="def">
+        <div class="row"><span class="k">Source</span><span>${cl.source}</span></div>
+        <div class="row"><span class="k">Measure</span><span><code>${m.measure}</code></span></div>
+        <div class="row"><span class="k">Time dimension</span><span><code>${m.time}</code></span></div>
+        <div class="row"><span class="k">Definition filter</span><span>${m.filters}</span></div>
+      </div>
+      <div class="seg">
+        <div class="lbl">Adjustable dimensions (${m.dims.length})</div>
+        ${dims}
+        ${m.thin ? `<p class="thin">${m.thin}</p>` : ""}
+      </div>
+      <div class="seg">
+        <div class="lbl">Active Pulse insights</div>
+        ${ins}
+      </div>
+      <div class="read">
+        <div class="col"><div class="h">What it shows</div><p>${m.shows}</p></div>
+        <div class="col"><div class="h">How to interpret it</div><p>${m.interpret}</p></div>
+        <div class="col"><div class="h">Value it brings</div><p>${m.value}</p></div>
+      </div>`;
+    app.appendChild(card);
+  });
+});
+</script>
+</body>
+</html>

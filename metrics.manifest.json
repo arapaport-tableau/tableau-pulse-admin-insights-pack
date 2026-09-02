@@ -1,0 +1,462 @@
+{
+  "pack": {
+    "name": "Pulse Admin Insights Starter Pack",
+    "version": "1.0.0-draft",
+    "description": "Prebuilt Tableau Pulse metric definitions on the standard Admin Insights data sources. Deploy-anywhere, basic specifications only. MVP scope: nine event-log trend metrics across three clusters.",
+    "spec_notes": "Manifest is the tool's intermediate representation. deploy.py resolves each source name to its site LUID at run time and maps these entries to Pulse CreateDefinitionRequest payloads. Filter values marked confirm:true must be verified against live data via query-datasource at build time. Aggregation enums COUNT and COUNT_DISTINCT are provisional pending API confirmation (SUM and AVERAGE are verified from the reference). MVP is deliberately limited to event/activity-log sources (TS Events, Viz Load Times, Job Performance), which retain real history and trend honestly in Pulse. Current-state snapshot sources (TS Users, Site Content, Subscriptions) full-refresh daily and retain no history, so they are held out of the MVP; see deferred sections. Adjustable dimensions are set PER METRIC, not per cluster: each list is drawn from fields that exist on the source, returns real values for that metric (a dimension pinned by the metric's own filter is omitted), and favors low/medium-cardinality categorical fields so Pulse top-contributor insights stay clean. High-cardinality identity fields (Actor User Name, Item LUID, raw Item Name on TS Events) are deliberately excluded as default breakdowns.",
+    "defaults": {
+      "comparison": "TIME_COMPARISON_PREVIOUS_PERIOD",
+      "show_insights": true,
+      "offset_from_today": 1
+    }
+  },
+  "clusters": [
+    {
+      "key": "adoption",
+      "title": "Adoption",
+      "source": "TS Events",
+      "conversation": "flagship single-source conversation",
+      "available_dimensions": [
+        "Actor Site Role",
+        "Actor License Role",
+        "Item Type",
+        "Event Type",
+        "Project Name",
+        "Item Owner Email",
+        "Workbook Name"
+      ],
+      "excluded_high_cardinality": [
+        "Actor User Name",
+        "Item Name",
+        "Item LUID"
+      ]
+    },
+    {
+      "key": "performance",
+      "title": "Performance",
+      "source": "Viz Load Times",
+      "available_dimensions": [
+        "Project Name",
+        "Workbook Name",
+        "Item Type",
+        "Status Code Type",
+        "Item Owner Email",
+        "Item Name"
+      ],
+      "excluded_high_cardinality": [
+        "Request ID",
+        "Item Luid",
+        "HTTP Request URI",
+        "HTTP User Agent"
+      ]
+    },
+    {
+      "key": "reliability",
+      "title": "Reliability",
+      "source": "Job Performance",
+      "available_dimensions": [
+        "Job Type",
+        "Final Job Result",
+        "Schedule Name",
+        "Item Type",
+        "Owner Email",
+        "Parent Project Name",
+        "Was Manual Run",
+        "Item Name"
+      ],
+      "excluded_high_cardinality": [
+        "Job ID",
+        "Job LUID",
+        "Item LUID",
+        "Error Message"
+      ]
+    }
+  ],
+  "metrics": [
+    {
+      "key": "active-users",
+      "name": "Active Users",
+      "description": "Distinct people who took any action on the site during the period. The clearest single adoption signal; higher is better.",
+      "cluster": "adoption",
+      "source": "TS Events",
+      "why": "The single clearest adoption signal. Distinct people doing anything on the site over the period.",
+      "measure": {
+        "field": "Actor User Name",
+        "aggregation": "AGGREGATION_COUNT_DISTINCT"
+      },
+      "time_dimension": "Event Date",
+      "temporality": null,
+      "filters": [],
+      "adjustable_dimensions": [
+        "Actor Site Role",
+        "Actor License Role"
+      ],
+      "sentiment": "SENTIMENT_TYPE_UP_IS_GOOD",
+      "number_format": "NUMBER_FORMAT_TYPE_NUMBER",
+      "default_granularity": "GRANULARITY_BY_WEEK",
+      "type": "trend"
+    },
+    {
+      "key": "site-logins",
+      "name": "Site Logins",
+      "description": "How often people sign in, counting login events. Shows whether Tableau is part of the daily routine; higher is better.",
+      "cluster": "adoption",
+      "source": "TS Events",
+      "why": "Login frequency shows whether Tableau is part of the daily routine or an occasional visit.",
+      "measure": {
+        "field": "Event Id",
+        "aggregation": "AGGREGATION_COUNT"
+      },
+      "time_dimension": "Event Date",
+      "temporality": null,
+      "filters": [
+        {
+          "field": "Event Name",
+          "include": [
+            "Login"
+          ],
+          "confirm": false,
+          "verified": "Confirmed against live TS Events: value is 'Login' (not 'Sign In')."
+        }
+      ],
+      "adjustable_dimensions": [
+        "Actor Site Role",
+        "Actor License Role"
+      ],
+      "dimensions_note": "Intentionally thin. Sign-in events are not performed against content, so Project, Item Type, and Workbook are null. Role and license are the only breakdowns that carry meaning.",
+      "sentiment": "SENTIMENT_TYPE_UP_IS_GOOD",
+      "number_format": "NUMBER_FORMAT_TYPE_NUMBER",
+      "default_granularity": "GRANULARITY_BY_WEEK",
+      "type": "trend"
+    },
+    {
+      "key": "content-views",
+      "name": "Content Views",
+      "description": "View and access events on content over the period. The core measure of value delivered; higher is better.",
+      "cluster": "adoption",
+      "source": "TS Events",
+      "why": "How much content is actually being consumed. The core value-delivered metric.",
+      "measure": {
+        "field": "Event Id",
+        "aggregation": "AGGREGATION_COUNT"
+      },
+      "time_dimension": "Event Date",
+      "temporality": null,
+      "filters": [
+        {
+          "field": "Item Type",
+          "include": [
+            "View"
+          ],
+          "confirm": false,
+          "verified": "Item Type values confirmed: View / Workbook / Data Source."
+        },
+        {
+          "field": "Event Type",
+          "include": [
+            "Access"
+          ],
+          "confirm": false,
+          "verified": "Event Type = Access confirmed against live data."
+        }
+      ],
+      "adjustable_dimensions": [
+        "Project Name",
+        "Workbook Name",
+        "Item Owner Email",
+        "Actor Site Role",
+        "Actor License Role"
+      ],
+      "sentiment": "SENTIMENT_TYPE_UP_IS_GOOD",
+      "number_format": "NUMBER_FORMAT_TYPE_NUMBER",
+      "default_granularity": "GRANULARITY_BY_WEEK",
+      "type": "trend"
+    },
+    {
+      "key": "unique-content-accessed",
+      "name": "Unique Content Accessed",
+      "description": "Distinct pieces of content accessed during the period. Breadth of use, not just volume; higher is better.",
+      "cluster": "adoption",
+      "source": "TS Events",
+      "why": "Breadth of use. A high view count on a shrinking set of content is a different story than broad use.",
+      "measure": {
+        "field": "Item LUID",
+        "aggregation": "AGGREGATION_COUNT_DISTINCT"
+      },
+      "time_dimension": "Event Date",
+      "temporality": null,
+      "filters": [
+        {
+          "field": "Event Type",
+          "include": [
+            "Access"
+          ],
+          "confirm": false,
+          "verified": "Event Type = Access confirmed against live data."
+        }
+      ],
+      "adjustable_dimensions": [
+        "Item Type",
+        "Project Name"
+      ],
+      "sentiment": "SENTIMENT_TYPE_UP_IS_GOOD",
+      "number_format": "NUMBER_FORMAT_TYPE_NUMBER",
+      "default_granularity": "GRANULARITY_BY_WEEK",
+      "type": "trend"
+    },
+    {
+      "key": "new-content-published",
+      "name": "New Content Published",
+      "description": "Publish events over the period. Shows whether the community is producing, not just consuming; higher is better.",
+      "cluster": "adoption",
+      "source": "TS Events",
+      "why": "Creation activity. Shows whether the community is producing, not just consuming.",
+      "measure": {
+        "field": "Event Id",
+        "aggregation": "AGGREGATION_COUNT"
+      },
+      "time_dimension": "Event Date",
+      "temporality": null,
+      "filters": [
+        {
+          "field": "Event Type",
+          "include": [
+            "Publish"
+          ],
+          "confirm": false,
+          "verified": "Confirmed against live TS Events: content publishing is Event Type 'Publish' (Publish Data Source/View/Workbook). 'Create' is administrative object creation, not content."
+        }
+      ],
+      "adjustable_dimensions": [
+        "Item Type",
+        "Project Name",
+        "Item Owner Email",
+        "Actor Site Role",
+        "Actor License Role"
+      ],
+      "sentiment": "SENTIMENT_TYPE_UP_IS_GOOD",
+      "number_format": "NUMBER_FORMAT_TYPE_NUMBER",
+      "default_granularity": "GRANULARITY_BY_WEEK",
+      "type": "trend"
+    },
+    {
+      "key": "avg-view-load-time",
+      "name": "Average View Load Time",
+      "description": "Average time to load a view. The speed users actually feel; lower is better.",
+      "cluster": "performance",
+      "source": "Viz Load Times",
+      "why": "The experience users actually feel. Slow loads are the fastest way to lose adoption.",
+      "measure": {
+        "field": "Duration",
+        "aggregation": "AGGREGATION_AVERAGE"
+      },
+      "time_dimension": "Request Time",
+      "temporality": null,
+      "filters": [],
+      "adjustable_dimensions": [
+        "Project Name",
+        "Workbook Name",
+        "Item Type",
+        "Status Code Type",
+        "Item Owner Email"
+      ],
+      "sentiment": "SENTIMENT_TYPE_DOWN_IS_GOOD",
+      "number_format": "NUMBER_FORMAT_TYPE_NUMBER",
+      "default_granularity": "GRANULARITY_BY_WEEK",
+      "type": "trend"
+    },
+    {
+      "key": "load-errors",
+      "name": "Load Errors",
+      "description": "View requests that returned a client or server error instead of rendering. A reliability signal separate from speed; lower is better.",
+      "cluster": "performance",
+      "source": "Viz Load Times",
+      "why": "Failed requests that never render. A reliability signal separate from speed.",
+      "measure": {
+        "field": "Request ID",
+        "aggregation": "AGGREGATION_COUNT"
+      },
+      "time_dimension": "Request Time",
+      "temporality": null,
+      "filters": [
+        {
+          "field": "Status Code Type",
+          "include": [
+            "Client errors",
+            "Server errors"
+          ],
+          "confirm": true
+        }
+      ],
+      "adjustable_dimensions": [
+        "Status Code Type",
+        "Project Name",
+        "Workbook Name",
+        "Item Type",
+        "Item Owner Email"
+      ],
+      "dimensions_note": "Status Code Type is kept as a breakdown even though it is filtered, because the filter admits two values (Client errors, Server errors) and splitting them is diagnostic.",
+      "sentiment": "SENTIMENT_TYPE_DOWN_IS_GOOD",
+      "number_format": "NUMBER_FORMAT_TYPE_NUMBER",
+      "default_granularity": "GRANULARITY_BY_WEEK",
+      "type": "trend"
+    },
+    {
+      "key": "extract-refresh-failures",
+      "name": "Extract Refresh Failures",
+      "description": "Failed extract-refresh jobs. Each one points at a specific schedule or item to fix; lower is better.",
+      "cluster": "reliability",
+      "source": "Job Performance",
+      "why": "Failed refreshes mean stale dashboards. The most actionable admin health metric.",
+      "measure": {
+        "field": "Job ID",
+        "aggregation": "AGGREGATION_COUNT"
+      },
+      "time_dimension": "Started At",
+      "temporality": null,
+      "filters": [
+        {
+          "field": "Final Job Result",
+          "include": [
+            "Failed"
+          ],
+          "confirm": true
+        },
+        {
+          "field": "Job Type",
+          "include": [
+            "RefreshExtracts",
+            "RefreshExtractsViaBridge"
+          ],
+          "confirm": true,
+          "verified": "Admin Insights Job Performance uses raw job-type enums. Extract refreshes are 'RefreshExtracts' and 'RefreshExtractsViaBridge' (there is no 'Extract Refresh' value). Confirmed against live data 2026-09."
+        }
+      ],
+      "adjustable_dimensions": [
+        "Schedule Name",
+        "Item Name",
+        "Item Type",
+        "Owner Email",
+        "Was Manual Run",
+        "Parent Project Name"
+      ],
+      "sentiment": "SENTIMENT_TYPE_DOWN_IS_GOOD",
+      "number_format": "NUMBER_FORMAT_TYPE_NUMBER",
+      "default_granularity": "GRANULARITY_BY_WEEK",
+      "type": "trend"
+    },
+    {
+      "key": "avg-job-duration",
+      "name": "Average Job Duration",
+      "description": "Average background job run time. Rising durations are an early warning of capacity pressure; lower is better.",
+      "cluster": "reliability",
+      "source": "Job Performance",
+      "why": "Rising job durations signal capacity pressure before it turns into failures.",
+      "measure": {
+        "field": "Job Duration",
+        "aggregation": "AGGREGATION_AVERAGE"
+      },
+      "time_dimension": "Started At",
+      "temporality": null,
+      "filters": [],
+      "adjustable_dimensions": [
+        "Job Type",
+        "Schedule Name",
+        "Item Type",
+        "Owner Email",
+        "Final Job Result",
+        "Parent Project Name"
+      ],
+      "sentiment": "SENTIMENT_TYPE_DOWN_IS_GOOD",
+      "number_format": "NUMBER_FORMAT_TYPE_NUMBER",
+      "default_granularity": "GRANULARITY_BY_WEEK",
+      "type": "trend"
+    }
+  ],
+  "deferred_cohort_and_snapshot": {
+    "note": "Held out of the MVP. Cohort metrics trend on a creation date and draw a real line, but sit on current-state snapshot sources, so older periods progressively undercount as users/content are deleted (survivorship bias). Snapshot metrics have no source history at all (daily full refresh overwrites prior state), so they cannot trend or compare period over period, and the license fields are FIXED site-level calcs that Pulse basic specs may reject. Candidates for a later version, likely alongside a purpose-built fact source that banks daily snapshots.",
+    "metrics": [
+      {
+        "name": "Data Source Connections",
+        "source": "TS Events",
+        "type": "trend",
+        "reason": "Clean event, but a narrower governed-data signal; second-tier for the adoption story."
+      },
+      {
+        "name": "New Users",
+        "source": "TS Users",
+        "type": "cohort",
+        "reason": "Survivorship bias on a snapshot source."
+      },
+      {
+        "name": "Content Growth",
+        "source": "Site Content",
+        "type": "cohort",
+        "reason": "Survivorship bias on a snapshot source."
+      },
+      {
+        "name": "New Subscriptions & Metric Follows",
+        "source": "Subscriptions",
+        "type": "cohort",
+        "reason": "Weak cohort on a snapshot source."
+      },
+      {
+        "name": "Subscriptions Delivered",
+        "source": "Subscriptions",
+        "type": "snapshot",
+        "reason": "Counts by Last Sent, a single most-recent-send timestamp per subscription, not a delivery log."
+      },
+      {
+        "name": "Occupied Licenses",
+        "source": "TS Users",
+        "type": "snapshot",
+        "reason": "No source history; FIXED site-level calc."
+      },
+      {
+        "name": "Remaining Licenses",
+        "source": "TS Users",
+        "type": "snapshot",
+        "reason": "No source history; FIXED site-level calc."
+      },
+      {
+        "name": "Average Days Since Last Login",
+        "source": "TS Users",
+        "type": "snapshot",
+        "reason": "No source history to trend."
+      },
+      {
+        "name": "Site Storage Used (MB)",
+        "source": "Site Content",
+        "type": "snapshot",
+        "reason": "No source history; SUM double-counts across item types."
+      }
+    ]
+  },
+  "deferred_advanced_tier": [
+    {
+      "name": "Slow Loads (>10s)",
+      "source": "Viz Load Times",
+      "needs": "measure threshold expression on Duration"
+    },
+    {
+      "name": "Inactive Users (>90 days)",
+      "source": "TS Users",
+      "needs": "measure threshold expression on Days Since Last Login"
+    },
+    {
+      "name": "Stale Content (>90 days)",
+      "source": "Site Content",
+      "needs": "DATEDIFF expression on Last Accessed At"
+    },
+    {
+      "name": "License Utilization %",
+      "source": "TS Users",
+      "needs": "ratio expression occupied / allowed"
+    },
+    {
+      "name": "Refresh Success Rate %",
+      "source": "Job Performance",
+      "needs": "ratio expression succeeded / total"
+    }
+  ]
+}

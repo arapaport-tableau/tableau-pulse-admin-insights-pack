@@ -1,0 +1,14 @@
+# Never commit real credentials or per-site runtime state
+config.json
+manifest.json
+manifest.*.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Scratch / local
+*.log
+.DS_Store
