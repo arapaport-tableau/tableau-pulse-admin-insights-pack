@@ -53,9 +53,25 @@ endpoints the tool calls do not exist on older releases; preflight checks and st
 version hint if they are missing. VizQL Data Service must also be enabled (used for field
 resolution and filter validation).
 
-## Run model (CLI)
+## Run model
 
-One script, `deploy.py`. Everything is a flag on it — there are no separate scripts or steps.
+Two front ends over one shared engine (`engine.py`):
+
+- **`app.py`** — a local web GUI (the default front door for non-technical users). Binds to
+  `127.0.0.1` only, holds the PAT secret in memory just long enough to sign in, gates every API
+  call with a random per-launch token, runs long operations in a background thread, and reports
+  progress via `/api/status` polling (no websockets). Double-click launchers (`Start Pulse
+  Pack.command` / `.bat`) do a one-time venv+pip setup and open the browser. No credentials are
+  ever stored; entered fresh each run.
+- **`deploy.py`** — the command-line face. Everything is a flag on it — no separate scripts.
+
+Both call the same `engine.py` functions (`sign_in`, `build_plan`, `validate_filters`,
+`execute_deploy`, `uninstall_plan`, `execute_uninstall`), so behavior, defaults, safety
+guarantees, and per-site state files are identical across the two. The engine never prints or
+exits; it returns structured results, takes an optional `log` callback for progress, and raises
+`EngineError` (plain-language message + hint) on anything a user should see.
+
+The CLI flags:
 
 - `deploy.py --dry-run` — sign in, preflight (site role, Pulse reachable, VDS enabled), resolve
   source LUIDs, resolve every field, match each metric against what already exists (by name **and**
@@ -167,20 +183,28 @@ Refresh Success Rate %.
 
 ```
 <repo>/
-  deploy.py              # the whole tool: connect, preflight, plan, create, group, follow, uninstall
-  metrics.manifest.json  # the metric definitions (intermediate representation deploy.py maps to Pulse)
+  engine.py              # all logic: connect, preflight, plan, create, group, follow, uninstall
+  deploy.py              # command-line face (thin CLI over engine.py)
+  app.py                 # local web GUI face (Flask, 127.0.0.1 only)
+  web/index.html         # the app's single-page UI (token injected at serve time)
+  Start Pulse Pack.command / .bat   # double-click launchers (one-time venv+pip, then run app.py)
+  metrics.manifest.json  # the metric definitions (intermediate representation the engine maps to Pulse)
   config.example.json    # server_url, site_name, pat_name (real config.json gitignored)
-  requirements.txt       # tableauserverclient, requests
+  requirements.txt       # tableauserverclient, requests, flask
   METRICS.md             # what each metric tells you and why it matters (mindset-shift doc)
   metrics-catalog.html   # visual catalog of the pack
-  README.md              # prereqs, quickstart, safety notes, limits, disclaimer
+  README.md              # app-first quickstart, safety notes, limits, disclaimer
+  CLI.md                 # command-line guide and full flag reference
   LICENSE                # public repo
-  .gitignore             # config.json, manifest.json, manifest.*.json, __pycache__
+  .gitignore             # config.json, manifest.json, manifest.*.json, __pycache__, .venv
 ```
 
 ## Resolved decisions
 
-- Single script (`deploy.py`), single metric IR (`metrics.manifest.json`). No `definitions/` dir.
+- Single shared engine (`engine.py`) behind two faces (`deploy.py` CLI, `app.py` web GUI), single
+  metric IR (`metrics.manifest.json`). No `definitions/` dir.
+- The web app is the default front door for non-technical users: local-only (`127.0.0.1`),
+  in-memory secret, per-launch token gate, polling for progress, no credential storage.
 - `--group` is the headline recommended run; group-follow is also the ownership marker (no name prefix).
 - Duplicate handling: adopt by spec signature; skip same-name-different-spec by default (`--on-conflict suffix` to override).
 - Per-site state (`manifest.<site_id>.json`) with a site-match guard on uninstall; discovery-based uninstall as fallback.

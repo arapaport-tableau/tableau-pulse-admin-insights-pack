@@ -12,3 +12,7 @@ venv/
 # Scratch / local
 *.log
 .DS_Store
+
+# Design scratch (not part of the shipped tool)
+gui-mockup.html
+logo-options.html

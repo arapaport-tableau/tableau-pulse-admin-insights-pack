@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pulse Admin Insights Pack</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23ffffff'/%3E%3Cpolyline points='10,58 28,58 40,58 48,28 58,80 68,48 76,58 90,58' fill='none' stroke='%231f6fbf' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --ink:#16191f; --muted:#5b6472; --line:#e3e7ee; --bg:#f5f7fa;
+    --blue:#0b6cbf; --blue-dark:#095a9e; --blue-soft:#e8f2fb;
+    --green:#1f8f4e; --green-soft:#e7f5ee; --amber:#a86a00; --amber-soft:#fbf1dc;
+    --red:#b42318; --red-soft:#fdf2f1;
+    --card:#ffffff; --shadow:0 1px 2px rgba(16,25,39,.06),0 6px 20px rgba(16,25,39,.06);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink);background:var(--bg);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .browser{max-width:860px;margin:26px auto;background:var(--card);border-radius:12px;
+    box-shadow:var(--shadow);overflow:hidden;border:1px solid var(--line)}
+  .app{padding:0}
+  .topbar{display:flex;align-items:center;gap:12px;padding:18px 28px;border-bottom:1px solid var(--line)}
+  .logo{width:38px;height:38px;border-radius:9px;background:#fff;border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center}
+  .logo svg{width:26px;height:26px;display:block}
+  .title h1{font-size:17px;margin:0;font-weight:650}
+  .title p{margin:0;font-size:12.5px;color:var(--muted)}
+  .safebadge{margin-left:auto;font-size:12px;color:var(--green);background:var(--green-soft);
+    border:1px solid #cdead9;padding:5px 10px;border-radius:20px;font-weight:600;white-space:nowrap}
+  .steps{display:flex;gap:6px;padding:14px 28px;border-bottom:1px solid var(--line);background:#fbfcfe}
+  .step{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);flex:1}
+  .step .num{width:22px;height:22px;border-radius:50%;background:#e6eaf1;color:var(--muted);
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex:0 0 auto}
+  .step.active{color:var(--ink);font-weight:600}
+  .step.active .num{background:var(--blue);color:#fff}
+  .step.done .num{background:var(--green);color:#fff}
+  .step.done{color:var(--ink)}
+  .body{padding:26px 28px 30px}
+  .screen{display:none}
+  .screen.show{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  h2{font-size:21px;margin:0 0 6px}
+  .lead{color:var(--muted);margin:0 0 22px;font-size:14.5px;max-width:60ch}
+  .field{margin-bottom:18px}
+  .field label{display:block;font-weight:600;font-size:14px;margin-bottom:5px}
+  .field .hint{font-size:12.5px;color:var(--muted);margin:0 0 7px}
+  .field input{width:100%;padding:11px 13px;border:1px solid #cfd6e0;border-radius:9px;font-size:14px;
+    font-family:inherit;background:#fff}
+  .field input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
+  .whereBtn{background:none;border:none;color:var(--blue);font-size:12.5px;cursor:pointer;padding:4px 0;font-weight:600}
+  .where{display:none;background:var(--blue-soft);border:1px solid #cfe4f7;border-radius:9px;
+    padding:11px 13px;font-size:12.8px;color:#1a4b73;margin-top:8px}
+  .where.show{display:block}
+  .where code{background:#fff;border:1px solid #cfe4f7;border-radius:5px;padding:1px 5px;font-size:12px}
+  .btnrow{display:flex;gap:10px;align-items:center;margin-top:26px;flex-wrap:wrap}
+  .btn{border:none;border-radius:9px;padding:12px 20px;font-size:14.5px;font-weight:650;cursor:pointer;font-family:inherit}
+  .btn.primary{background:var(--blue);color:#fff}
+  .btn.primary:hover{background:var(--blue-dark)}
+  .btn:disabled{opacity:.55;cursor:default}
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid #cfd6e0}
+  .btn.ghost:hover{background:#f3f6fa}
+  .btn.danger{background:#fff;color:var(--red);border:1px solid #f0c2bd}
+  .btn.danger:hover{background:var(--red-soft)}
+  .btn.solid-danger{background:var(--red);color:#fff}
+  .note{display:flex;gap:10px;background:#fbfcfe;border:1px solid var(--line);border-radius:10px;
+    padding:12px 14px;font-size:13px;color:var(--muted);margin-top:8px}
+  .note .ic{flex:0 0 auto}
+  .banner{display:flex;gap:11px;align-items:flex-start;border-radius:10px;padding:13px 15px;margin-bottom:20px;font-size:13.5px}
+  .banner.ok{background:var(--green-soft);border:1px solid #c7e8d4;color:#12633a}
+  .banner.warn{background:var(--amber-soft);border:1px solid #f0dcae;color:#7a4e00}
+  .banner.err{background:var(--red-soft);border:1px solid #f0c2bd;color:#8a1c14}
+  .group-h{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);
+    font-weight:700;margin:18px 0 8px}
+  .metric{display:flex;align-items:center;gap:12px;padding:11px 14px;border:1px solid var(--line);
+    border-radius:10px;margin-bottom:7px;background:#fff}
+  .metric .name{font-weight:600;font-size:14px}
+  .metric .desc{font-size:12.3px;color:var(--muted)}
+  .metric .tag{margin-left:auto;font-size:11.5px;font-weight:700;padding:4px 9px;border-radius:20px;white-space:nowrap}
+  .tag.new{background:var(--blue-soft);color:var(--blue)}
+  .tag.exists{background:#eef1f5;color:var(--muted)}
+  .tag.conflict{background:var(--amber-soft);color:var(--amber)}
+  .tag.removed{background:var(--red-soft);color:var(--red)}
+  .metric .mi{width:26px;height:26px;border-radius:7px;background:#f0f4f9;display:flex;align-items:center;
+    justify-content:center;flex:0 0 auto;font-size:14px}
+  .optcard{border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-top:22px;background:#fbfcfe}
+  .optcard h3{margin:0 0 4px;font-size:14.5px}
+  .opt{display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-top:1px solid var(--line)}
+  .opt:first-of-type{border-top:none}
+  .opt input[type=checkbox]{width:18px;height:18px;margin-top:2px;accent-color:var(--blue);flex:0 0 auto}
+  .opt .ol{font-weight:600;font-size:14px}
+  .opt .od{font-size:12.5px;color:var(--muted)}
+  .opt .sub{margin-top:8px}
+  .opt .sub input{padding:8px 11px;border:1px solid #cfd6e0;border-radius:8px;font-size:13px;width:240px;font-family:inherit}
+  .prog{margin:8px 0 20px}
+  .bar{height:9px;background:#e6eaf1;border-radius:20px;overflow:hidden}
+  .bar > i{display:block;height:100%;width:0;background:var(--blue);border-radius:20px;transition:width .4s}
+  .plog{margin-top:18px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .plog div{display:flex;align-items:center;gap:10px;padding:10px 14px;font-size:13.5px;border-top:1px solid var(--line)}
+  .plog div:first-child{border-top:none}
+  .plog .s{width:18px;text-align:center}
+  .spin{width:15px;height:15px;border:2px solid #cdd6e2;border-top-color:var(--blue);border-radius:50%;
+    display:inline-block;animation:sp .7s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .muted{color:var(--muted)}
+  .summary{display:flex;gap:14px;margin:18px 0 6px;flex-wrap:wrap}
+  .stat{flex:1;min-width:130px;border:1px solid var(--line);border-radius:12px;padding:16px;text-align:center;background:#fff}
+  .stat .n{font-size:28px;font-weight:700;color:var(--blue)}
+  .stat .l{font-size:12.5px;color:var(--muted)}
+  .checklist{list-style:none;padding:0;margin:16px 0}
+  .checklist li{display:flex;gap:10px;padding:7px 0;font-size:14px}
+  .checklist li::before{content:"✓";color:var(--green);font-weight:800}
+  .foot{padding:14px 28px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);
+    display:flex;justify-content:space-between;align-items:center;background:#fbfcfe}
+</style>
+</head>
+<body>
+<div class="browser">
+  <div class="app">
+    <div class="topbar">
+      <div class="logo" title="Pulse Admin Insights Pack">
+        <svg viewBox="0 0 100 100" aria-label="Pulse Admin Insights Pack">
+          <polyline points="6,58 26,58 38,58 46,30 56,78 66,50 74,58 94,58"
+            fill="none" stroke="#1f6fbf" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="title">
+        <h1>Pulse Admin Insights Pack</h1>
+        <p>Set up ready-made metrics on your Tableau usage data</p>
+      </div>
+      <span class="safebadge">🔒 Runs on your computer</span>
+    </div>
+
+    <div class="steps" id="tracker">
+      <div class="step" data-s="1"><span class="num">1</span> Connect</div>
+      <div class="step" data-s="2"><span class="num">2</span> Review</div>
+      <div class="step" data-s="3"><span class="num">3</span> Create</div>
+      <div class="step" data-s="4"><span class="num">4</span> Done</div>
+    </div>
+
+    <div class="body">
+
+      <!-- SCREEN 0: WELCOME -->
+      <section class="screen show" id="s0">
+        <h2>Welcome 👋</h2>
+        <p class="lead">This app adds nine ready-made Tableau Pulse metrics to your site, built on data
+          you already have (how your own Tableau site is being used). No spreadsheets, no setup, no waiting.</p>
+        <ul class="checklist">
+          <li>Nine metrics across adoption, performance, and reliability</li>
+          <li>Nothing is created until you review a plan and click Create</li>
+          <li>A one-click Remove button if you ever want to undo it</li>
+        </ul>
+        <div class="note">
+          <span class="ic">🔒</span>
+          <div><b>Your sign-in details never leave this computer.</b> This app is running locally.
+            It talks straight to your Tableau site and nowhere else.</div>
+        </div>
+        <div class="note">
+          <span class="ic">⏱️</span>
+          <div>Takes about 5 minutes. You'll need a Tableau <b>Personal Access Token</b>. Don't have one?
+            The next screen shows you exactly where to create it.</div>
+        </div>
+        <div class="btnrow">
+          <button class="btn primary" onclick="go(1)">Get started →</button>
+        </div>
+      </section>
+
+      <!-- SCREEN 1: CONNECT -->
+      <section class="screen" id="s1">
+        <h2>Connect to your Tableau site</h2>
+        <p class="lead">Fill in these four things. Not sure where to find one? Click
+          <span style="color:var(--blue);font-weight:600">Where do I find this?</span> under any field.</p>
+
+        <div id="connErr"></div>
+
+        <div class="field">
+          <label>Your Tableau web address</label>
+          <p class="hint">The start of the address you see when you're signed in to Tableau.</p>
+          <input id="f_server" placeholder="https://10ax.online.tableau.com" spellcheck="false" autocomplete="off">
+          <button class="whereBtn" onclick="tog('w1')">Where do I find this?</button>
+          <div class="where" id="w1">Look at your browser's address bar in Tableau. Copy the part that
+            ends in <code>.online.tableau.com</code>. Example: from
+            <code>https://10ax.online.tableau.com/#/site/acme/home</code> you'd copy
+            <code>https://10ax.online.tableau.com</code>.</div>
+        </div>
+
+        <div class="field">
+          <label>Your site name</label>
+          <p class="hint">The short name of your specific site. Leave blank only if your company has a single default site.</p>
+          <input id="f_site" placeholder="acme" spellcheck="false" autocomplete="off">
+          <button class="whereBtn" onclick="tog('w2')">Where do I find this?</button>
+          <div class="where" id="w2">In that same web address, it's the word right after
+            <code>/site/</code>. In <code>.../#/site/<b>acme</b>/home</code>, the site name is
+            <code>acme</code>.</div>
+        </div>
+
+        <div class="field">
+          <label>Personal Access Token name</label>
+          <p class="hint">The name you gave your token in Tableau. <b>Type it exactly</b> — it's
+            case-sensitive, so capital letters, spaces, and punctuation all have to match.</p>
+          <input id="f_patname" placeholder="Pulse Pack" spellcheck="false" autocomplete="off">
+          <button class="whereBtn" onclick="tog('w3')">Where do I find this? / How do I make one?</button>
+          <div class="where" id="w3">In Tableau, click your profile picture (top right) →
+            <b>My Account Settings</b> → scroll to <b>Personal Access Tokens</b>. Type a name like
+            <code>Pulse Pack</code>, click <b>Create Token</b>, and <b>copy the secret it shows you</b>
+            (you'll paste that below). Tableau only shows the secret once.</div>
+        </div>
+
+        <div class="field">
+          <label>Personal Access Token secret</label>
+          <p class="hint">The long code Tableau showed you when you created the token. It's kept hidden as you type.</p>
+          <input id="f_patsecret" type="password" placeholder="paste the secret here" spellcheck="false" autocomplete="off">
+          <button class="whereBtn" onclick="tog('w4')">Where do I find this?</button>
+          <div class="where" id="w4">This is the one-time secret from when you clicked <b>Create Token</b>.
+            If you didn't save it, just create a new token (that's fine) and use the fresh secret.</div>
+        </div>
+
+        <div class="note">
+          <span class="ic">🔒</span>
+          <div>Your details are used only for this run and are never saved. You'll enter them fresh each
+            time you open the app.</div>
+        </div>
+
+        <div class="btnrow">
+          <button class="btn ghost" id="connBack" onclick="go(0)">← Back</button>
+          <button class="btn primary" id="connBtn" onclick="checkConn()">Check connection &amp; preview →</button>
+          <span class="muted" id="connHint" style="font-size:12.5px">We'll sign in and show you a plan. Nothing gets created yet.</span>
+        </div>
+        <div class="note" id="connStatus" style="display:none">
+          <span class="ic"><span class="spin"></span></span>
+          <div><b id="connStatusMsg">Signing in…</b><br>
+            <span class="muted" style="font-size:12.5px">This can take a few seconds. Please keep this window open.</span></div>
+        </div>
+      </section>
+
+      <!-- SCREEN 2: REVIEW PLAN -->
+      <section class="screen" id="s2">
+        <h2>Here's the plan</h2>
+        <p class="lead">This is what the app <b>would</b> do. Nothing has been created yet. Review it,
+          choose your options below, then click Create.</p>
+
+        <div id="planBanner"></div>
+        <div id="planList"></div>
+        <div id="planNotes"></div>
+
+        <div class="optcard" id="optcard">
+          <h3>Options</h3>
+          <div class="opt">
+            <input type="checkbox" checked id="og">
+            <div>
+              <div class="ol">Create a group so my team follows these metrics</div>
+              <div class="od">Anyone you add to this group later automatically follows all nine. The app never adds people for you.</div>
+              <div class="sub"><input id="ogname" value="Admin Insights Metrics"></div>
+            </div>
+          </div>
+          <div class="opt">
+            <input type="checkbox" id="of">
+            <div>
+              <div class="ol">Follow these metrics myself right now</div>
+              <div class="od">Subscribes you so you see a live feed immediately.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="btnrow">
+          <button class="btn ghost" onclick="go(1)">← Back</button>
+          <button class="btn primary" id="createBtn" onclick="runCreate()">Create these metrics →</button>
+        </div>
+      </section>
+
+      <!-- SCREEN 3: WORKING -->
+      <section class="screen" id="s3">
+        <h2 id="workTitle">Setting up your metrics…</h2>
+        <p class="lead">This takes a minute or two. You can leave this window open.</p>
+        <div class="prog"><div class="bar"><i id="pbar"></i></div></div>
+        <div class="plog" id="plog"></div>
+      </section>
+
+      <!-- SCREEN 4: DONE -->
+      <section class="screen" id="s4">
+        <h2>All set 🎉</h2>
+        <p class="lead">Your metrics are live in Tableau Pulse. Give them a couple of minutes to fill in with data.</p>
+        <div class="summary" id="doneStats"></div>
+        <div class="note" style="margin-top:18px">
+          <span class="ic">💡</span>
+          <div>A brand-new metric can look empty at first. Tableau needs a few minutes to fill in the data.</div>
+        </div>
+        <div class="btnrow">
+          <button class="btn primary" id="openPulse">Open Tableau Pulse ↗</button>
+          <button class="btn ghost" onclick="resetAll()">Set up another site</button>
+          <button class="btn danger" onclick="openRemove()">Remove what this app added…</button>
+        </div>
+        <p class="muted" style="font-size:12.5px;margin-top:16px">You can close this window any time. Nothing keeps running.</p>
+      </section>
+
+      <!-- SCREEN 9: REMOVE -->
+      <section class="screen" id="s9">
+        <h2>Remove what this app added</h2>
+        <p class="lead">This undoes the setup. It removes only the things this app created and leaves everything
+          else on your site exactly as it was. Here's precisely what happens:</p>
+        <div id="removeErr"></div>
+        <div id="removeList"></div>
+        <div class="note" style="margin-top:16px"><span class="ic">✅</span><div><b>Left completely alone:</b>
+          your data, your dashboards, your site settings, and any metrics you or your team created yourselves.</div></div>
+        <div class="btnrow">
+          <button class="btn ghost" onclick="go(4)">← Cancel</button>
+          <button class="btn solid-danger" id="removeBtn" onclick="runRemove()">Yes, remove these</button>
+        </div>
+      </section>
+
+    </div>
+
+    <div class="foot">
+      <span>Pulse Admin Insights Pack · unofficial community tool</span>
+      <span>🔒 Your login stays on this computer</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  const TOKEN = "__SESSION_TOKEN__";
+  const ICONS = {
+    "Active Users":"👥","Site Logins":"🔑","Content Views":"👁️","Unique Content Accessed":"📄",
+    "New Content Published":"📤","Average View Load Time":"⚡","Load Errors":"⚠️",
+    "Extract Refresh Failures":"🔄","Average Job Duration":"⏲️"};
+  const CLUSTER_H = {
+    adoption:"Adoption · how your site is being used",
+    performance:"Performance · the experience people feel",
+    reliability:"Reliability · keeping data fresh"};
+  const CLUSTER_ORDER = ["adoption","performance","reliability"];
+  let PLAN = null;      // last connect response
+  let CONN = null;      // {server_url, site_name}
+
+  const stepForScreen = {0:0,1:1,2:2,3:3,4:4,9:3};
+  function go(n){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));
+    document.getElementById('s'+n).classList.add('show');
+    const cur = stepForScreen[n];
+    document.querySelectorAll('#tracker .step').forEach(el=>{
+      const s = +el.dataset.s;
+      el.classList.remove('active','done');
+      if(s < cur) el.classList.add('done'); else if(s === cur) el.classList.add('active');
+    });
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  function tog(id){document.getElementById(id).classList.toggle('show');}
+
+  async function api(path, body){
+    const opt = {method: body ? 'POST':'GET', headers:{'X-Session-Token':TOKEN}};
+    if(body){ opt.headers['Content-Type']='application/json'; opt.body=JSON.stringify(body); }
+    const r = await fetch(path, opt);
+    const data = await r.json().catch(()=>({error:"Unexpected response from the app."}));
+    return {ok:r.ok, data};
+  }
+  function banner(kind, html){ return `<div class="banner ${kind}"><span>${kind==='ok'?'✅':kind==='warn'?'ℹ️':'⚠️'}</span><div>${html}</div></div>`; }
+  function metricRow(name, desc, tag){
+    const cls = tag.cls, label = tag.label;
+    return `<div class="metric"><span class="mi">${ICONS[name]||'📊'}</span>`+
+           `<div><div class="name">${name}</div><div class="desc">${desc||''}</div></div>`+
+           `<span class="tag ${cls}">${label}</span></div>`;
+  }
+
+  // ── Connect ──
+  const CONN_MSGS = ["Signing in to Tableau…","Finding your Admin Insights data sources…",
+    "Reading the fields on each source…","Checking what already exists…",
+    "Double-checking the data behind each metric…","Building your plan…"];
+  let connTimer = null;
+  function startConnStatus(){
+    const box = document.getElementById('connStatus');
+    const msg = document.getElementById('connStatusMsg');
+    let i = 0; msg.textContent = CONN_MSGS[0];
+    box.style.display = 'flex';
+    connTimer = setInterval(()=>{ i = Math.min(i+1, CONN_MSGS.length-1); msg.textContent = CONN_MSGS[i]; }, 1400);
+  }
+  function stopConnStatus(){
+    if(connTimer){ clearInterval(connTimer); connTimer = null; }
+    document.getElementById('connStatus').style.display = 'none';
+  }
+
+  async function checkConn(){
+    const btn = document.getElementById('connBtn');
+    document.getElementById('connErr').innerHTML = '';
+    const body = {
+      server_url: document.getElementById('f_server').value.trim(),
+      site_name:  document.getElementById('f_site').value.trim(),
+      pat_name:   document.getElementById('f_patname').value.trim(),
+      pat_secret: document.getElementById('f_patsecret').value.trim(),
+    };
+    if(!body.server_url || !body.pat_name || !body.pat_secret){
+      document.getElementById('connErr').innerHTML = banner('err','Please fill in the web address, token name, and token secret.');
+      return;
+    }
+    btn.disabled = true; document.getElementById('connBack').disabled = true;
+    btn.innerHTML = '<span class="spin" style="border-top-color:#fff;vertical-align:-2px"></span> &nbsp;Checking…';
+    startConnStatus();
+    let ok, data;
+    try {
+      ({ok, data} = await api('/api/connect', body));
+    } finally {
+      stopConnStatus();
+      btn.disabled = false; document.getElementById('connBack').disabled = false;
+      btn.innerHTML = 'Check connection &amp; preview →';
+    }
+    if(!ok){
+      document.getElementById('connErr').innerHTML =
+        banner('err', `<b>${data.error||'Could not connect.'}</b>${data.hint?('<br>'+data.hint):''}`);
+      return;
+    }
+    PLAN = data; CONN = {server_url: body.server_url, site_name: body.site_name};
+    renderPlan(data);
+    go(2);
+  }
+
+  function renderPlan(d){
+    const site = CONN.site_name || 'your site';
+    let b = '';
+    if(d.blocked){
+      b = banner('err', `<b>Some field names could not be matched on ${site}.</b> This usually means a `+
+        `non-English or customized Admin Insights setup. The affected metrics are marked below. `+
+        `Nothing can be created until that's resolved.`);
+    } else {
+      b = banner('ok', `<b>Connected to "${site}".</b> All data checks passed — every metric found matching data on your site.`);
+    }
+    document.getElementById('planBanner').innerHTML = b;
+
+    // group by cluster
+    let html = '';
+    for(const c of CLUSTER_ORDER){
+      const items = d.items.filter(it=>it.cluster===c);
+      if(!items.length) continue;
+      html += `<div class="group-h">${CLUSTER_H[c]||c}</div>`;
+      for(const it of items){
+        let tag;
+        if(it.unresolved) tag={cls:'conflict',label:'Needs attention'};
+        else if(it.conflict) tag={cls:'conflict',label:'Name in use'};
+        else if(it.already_there) tag={cls:'exists',label:'Already there'};
+        else tag={cls:'new',label:'New'};
+        html += metricRow(it.name, it.why, tag);
+      }
+    }
+    document.getElementById('planList').innerHTML = html;
+
+    // notes
+    let notes = '';
+    if(d.counts.already){
+      notes += banner('warn', `<b>${d.counts.already} metric(s) already exist</b> on your site and match this pack, `+
+        `so the app leaves them as-is and reuses them. No duplicates are made.`);
+    }
+    if(d.counts.conflict){
+      notes += banner('warn', `<b>${d.counts.conflict} name(s) are already taken</b> by a differently-configured metric. `+
+        `The app will skip those and leave them untouched.`);
+    }
+    if(d.empty_filters && d.empty_filters.length){
+      const names = [...new Set(d.empty_filters.map(f=>f.metric))].join(', ');
+      notes += banner('warn', `<b>Heads up:</b> ${names} may read empty at first — the standard filter values `+
+        `matched no rows in your data yet. It will fill in as activity accrues.`);
+    }
+    if(d.ambiguities && d.ambiguities.length){
+      notes += banner('warn', `<b>Note:</b> more than one data source is named ${d.ambiguities.join(', ')}. `+
+        `The app uses the one in your Admin Insights project.`);
+    }
+    document.getElementById('planNotes').innerHTML = notes;
+
+    document.getElementById('createBtn').disabled = !!d.blocked;
+    if(d.default_group_name) document.getElementById('ogname').value = d.default_group_name;
+  }
+
+  // ── Create ──
+  async function runCreate(){
+    const body = {
+      make_group: document.getElementById('og').checked,
+      group_name: document.getElementById('ogname').value.trim(),
+      follow: document.getElementById('of').checked,
+    };
+    document.getElementById('workTitle').textContent = 'Setting up your metrics…';
+    document.getElementById('plog').innerHTML = '';
+    document.getElementById('pbar').style.width = '0%';
+    go(3);
+    const {ok, data} = await api('/api/create', body);
+    if(!ok){ go(2); document.getElementById('planNotes').innerHTML =
+      banner('err', data.error||'Could not start.'); return; }
+    pollStatus(()=>{ renderDone(); go(4); });
+  }
+
+  function pollStatus(onDone){
+    let ticks = 0;
+    const bar = document.getElementById('pbar');
+    const plog = document.getElementById('plog');
+    const timer = setInterval(async ()=>{
+      const {ok, data} = await api('/api/status');
+      if(!ok) return;
+      ticks++;
+      // render log with the last line spinning while still running
+      let html = '';
+      const lines = data.log || [];
+      lines.forEach((ln, i)=>{
+        const isLast = (i===lines.length-1) && data.running;
+        html += `<div><span class="s">${isLast?'<span class="spin"></span>':'<span style="color:var(--green)">✓</span>'}</span>`+
+                `<span class="${isLast?'':'muted'}">${ln.replace(/…/g,'')}</span></div>`;
+      });
+      if(!lines.length && data.running){
+        html = `<div><span class="s"><span class="spin"></span></span> <span>Working…</span></div>`;
+      }
+      plog.innerHTML = html;
+      // approximate progress: creep toward 90% while running, snap to 100% when done
+      let pct = data.done ? 100 : Math.min(90, 12 + ticks*7 + lines.length*4);
+      bar.style.width = pct + '%';
+      if(data.done){
+        clearInterval(timer);
+        window._summary = data.summary || null;
+        if(data.error){
+          document.getElementById('workTitle').textContent = 'Something went wrong';
+          plog.innerHTML += `<div><span class="s">⚠️</span><span>${data.error}</span></div>`;
+          return;
+        }
+        setTimeout(onDone, 500);
+      }
+    }, 1000);
+  }
+
+  function renderDone(){
+    const s = (PLAN && PLAN.counts) || {new:0, already:0};
+    const st = (window._summary)||{};
+    const created = (st.created!=null)?st.created:s.new;
+    const adopted = (st.adopted!=null)?st.adopted:s.already;
+    let stats = `<div class="stat"><div class="n">${created}</div><div class="l">metrics created</div></div>`;
+    if(adopted) stats += `<div class="stat"><div class="n">${adopted}</div><div class="l">already existed (reused)</div></div>`;
+    if(st.group_followed) stats += `<div class="stat"><div class="n">${st.group_followed}</div><div class="l">now followed by your group</div></div>`;
+    else if(st.user_followed) stats += `<div class="stat"><div class="n">${st.user_followed}</div><div class="l">you now follow</div></div>`;
+    document.getElementById('doneStats').innerHTML = stats;
+    // Open Pulse link
+    const base = (CONN.server_url||'').replace(/\/+$/,'');
+    const url = CONN.site_name ? `${base}/#/site/${CONN.site_name}/pulse` : `${base}/#/pulse`;
+    document.getElementById('openPulse').onclick = ()=>window.open(url,'_blank');
+  }
+
+  // ── Remove ──
+  async function openRemove(){
+    go(9);
+    document.getElementById('removeErr').innerHTML = '';
+    document.getElementById('removeList').innerHTML = '<p class="muted">Checking what can be removed…</p>';
+    const {ok, data} = await api('/api/remove-plan', {});
+    if(!ok){
+      document.getElementById('removeList').innerHTML = '';
+      document.getElementById('removeErr').innerHTML =
+        banner('err', `<b>${data.error||'Nothing to remove.'}</b>${data.hint?('<br>'+data.hint):''}`);
+      document.getElementById('removeBtn').disabled = true;
+      return;
+    }
+    document.getElementById('removeBtn').disabled = false;
+    let html = '';
+    if(data.warning) html += banner('warn', data.warning);
+    if(data.to_remove.length){
+      html += `<div class="metric"><span class="mi">🗑️</span><div><div class="name">`+
+        `${data.to_remove.length} item(s) this app created</div><div class="desc">`+
+        `${data.to_remove.slice(0,4).join(', ')}${data.to_remove.length>4?', and more':''}</div></div>`+
+        `<span class="tag removed">Removed</span></div>`;
+    }
+    if(data.group){
+      html += `<div class="metric"><span class="mi">👥</span><div><div class="name">Group "${data.group}"</div>`+
+        `<div class="desc">This app created it, so it's removed too</div></div><span class="tag removed">Removed</span></div>`;
+    }
+    for(const k of data.to_keep){
+      html += `<div class="metric"><span class="mi">🛡️</span><div><div class="name">${k}</div>`+
+        `<div class="desc">Existed before this app — kept, just unfollowed. Never deleted.</div></div>`+
+        `<span class="tag exists">Kept</span></div>`;
+    }
+    if(!data.to_remove.length && !data.group){
+      html += `<p class="muted">There's nothing for this app to remove on this site.</p>`;
+      document.getElementById('removeBtn').disabled = true;
+    }
+    document.getElementById('removeList').innerHTML = html;
+  }
+
+  async function runRemove(){
+    document.getElementById('workTitle').textContent = 'Removing…';
+    document.getElementById('plog').innerHTML = '';
+    document.getElementById('pbar').style.width = '0%';
+    go(3);
+    const {ok, data} = await api('/api/remove', {});
+    if(!ok){ go(9); document.getElementById('removeErr').innerHTML = banner('err', data.error||'Could not start.'); return; }
+    pollStatus(()=>{
+      document.getElementById('doneStats').innerHTML =
+        `<div class="stat"><div class="n">✓</div><div class="l">removed cleanly</div></div>`;
+      document.querySelector('#s4 h2').textContent = 'Removed 🧹';
+      document.querySelector('#s4 .lead').textContent =
+        'The app removed everything it had created and left the rest of your site untouched.';
+      go(4);
+    });
+  }
+
+  function resetAll(){
+    ['f_server','f_site','f_patname','f_patsecret'].forEach(id=>document.getElementById(id).value='');
+    PLAN=null; CONN=null; window._summary=null;
+    go(0);
+  }
+</script>
+</body>
+</html>
