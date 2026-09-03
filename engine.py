@@ -35,6 +35,10 @@ DEFAULT_GROUP_NAME = "Admin Insights Metrics"
 ADMIN_INSIGHTS_PROJECT = "Admin Insights"
 VND_CREATE = "application/vnd.tableau.metricqueryservice.v1.CreateDefinitionRequest+json"
 
+# Every network call carries this so a stalled connection surfaces as a real error
+# instead of hanging the deploy thread forever. (connect timeout, read timeout)
+HTTP_TIMEOUT = (10, 30)
+
 
 def _noop(_msg):
     pass
@@ -94,7 +98,7 @@ def preflight(server, server_url, token, log=_noop):
 
     r = requests.get(f"{server_url}/api/-/pulse/definitions",
                      headers={"x-tableau-auth": token, "Accept": "application/json"},
-                     params={"page_size": 1})
+                     params={"page_size": 1}, timeout=HTTP_TIMEOUT)
     if r.status_code == 404:
         raise EngineError(
             "Tableau Pulse is not available on this site.",
@@ -112,7 +116,7 @@ def read_vds_field_map(server_url, token, luid):
     r = requests.post(f"{server_url}/api/v1/vizql-data-service/read-metadata",
                       headers={"x-tableau-auth": token, "Content-Type": "application/json",
                                "Accept": "application/json"},
-                      json={"datasource": {"datasourceLuid": luid}})
+                      json={"datasource": {"datasourceLuid": luid}}, timeout=HTTP_TIMEOUT)
     if r.status_code in (403, 404):
         raise EngineError(
             "Could not read the data source fields.",
@@ -130,7 +134,7 @@ def vds_filter_value_count(server_url, token, luid, caption, values):
                                    "values": values, "exclude": False}]}}
     r = requests.post(f"{server_url}/api/v1/vizql-data-service/query-datasource",
                       headers={"x-tableau-auth": token, "Content-Type": "application/json",
-                               "Accept": "application/json"}, json=body)
+                               "Accept": "application/json"}, json=body, timeout=HTTP_TIMEOUT)
     if not r.ok:
         return None
     data = r.json().get("data", [])
@@ -246,7 +250,7 @@ def list_existing_definitions(server_url, token):
             params["page_token"] = page_token
         r = requests.get(f"{server_url}/api/-/pulse/definitions",
                          headers={"x-tableau-auth": token, "Accept": "application/json"},
-                         params=params)
+                         params=params, timeout=HTTP_TIMEOUT)
         r.raise_for_status()
         body = r.json()
         for d in body.get("definitions", []):
@@ -267,7 +271,7 @@ def read_all_subscriptions(server_url, token):
             params["page_token"] = page_token
         r = requests.get(f"{server_url}/api/-/pulse/subscriptions",
                          headers={"x-tableau-auth": token, "Accept": "application/json"},
-                         params=params)
+                         params=params, timeout=HTTP_TIMEOUT)
         r.raise_for_status()
         body = r.json()
         out.extend(body.get("subscriptions", []))
@@ -279,7 +283,7 @@ def read_all_subscriptions(server_url, token):
 def default_metric_for_definition(server_url, token, def_id):
     """The full default metric dict for a definition (the one the group/user follows)."""
     r = requests.get(f"{server_url}/api/-/pulse/definitions/{def_id}/metrics",
-                     headers={"x-tableau-auth": token, "Accept": "application/json"})
+                     headers={"x-tableau-auth": token, "Accept": "application/json"}, timeout=HTTP_TIMEOUT)
     r.raise_for_status()
     metrics = r.json().get("metrics", [])
     if not metrics:
@@ -290,7 +294,7 @@ def default_metric_for_definition(server_url, token, def_id):
 def sibling_metric_with_period(server_url, token, def_id, granularity, range_):
     """A non-default metric on the definition that already sits on the target period, if any."""
     r = requests.get(f"{server_url}/api/-/pulse/definitions/{def_id}/metrics",
-                     headers={"x-tableau-auth": token, "Accept": "application/json"})
+                     headers={"x-tableau-auth": token, "Accept": "application/json"}, timeout=HTTP_TIMEOUT)
     r.raise_for_status()
     for m in r.json().get("metrics", []):
         mp = m.get("specification", {}).get("measurement_period", {})
@@ -302,7 +306,7 @@ def sibling_metric_with_period(server_url, token, def_id, granularity, range_):
 
 def definition_id_for_metric(server_url, token, metric_id):
     r = requests.get(f"{server_url}/api/-/pulse/metrics/{metric_id}",
-                     headers={"x-tableau-auth": token, "Accept": "application/json"})
+                     headers={"x-tableau-auth": token, "Accept": "application/json"}, timeout=HTTP_TIMEOUT)
     if not r.ok:
         return None
     return r.json().get("metric", {}).get("definition_id")
@@ -314,7 +318,7 @@ def set_definition_description(server_url, token, def_id, description):
                        headers={"x-tableau-auth": token, "Content-Type": "application/json",
                                 "Accept": "application/json"},
                        params={"update_mask": "description"},
-                       json={"description": description})
+                       json={"description": description}, timeout=HTTP_TIMEOUT)
     return r.ok, ("" if r.ok else f"{r.status_code} {r.text[:120]}")
 
 
@@ -333,7 +337,7 @@ def set_metric_period(server_url, token, metric, granularity, range_):
     r = requests.patch(f"{server_url}/api/-/pulse/metrics/{metric['id']}",
                        headers={"x-tableau-auth": token, "Content-Type": "application/json",
                                 "Accept": "application/json"},
-                       json=body)
+                       json=body, timeout=HTTP_TIMEOUT)
     return r.ok, ("ok" if r.ok else f"{r.status_code} {r.text[:120]}")
 
 
@@ -342,7 +346,7 @@ def create_definition(server_url, token, payload):
     r = requests.post(f"{server_url}/api/-/pulse/definitions",
                       headers={"x-tableau-auth": token, "Accept": "application/json",
                                "Content-Type": VND_CREATE},
-                      json=payload)
+                      json=payload, timeout=HTTP_TIMEOUT)
     if r.ok:
         return r.json().get("definition"), r.status_code, None, ""
     return None, r.status_code, r.headers.get("validation_code"), r.text[:160]
@@ -353,7 +357,7 @@ def subscribe(server_url, token, metric_id, follower):
     r = requests.post(f"{server_url}/api/-/pulse/subscriptions:batchCreate",
                       headers={"x-tableau-auth": token, "Content-Type": "application/json",
                                "Accept": "application/json"},
-                      json={"metric_id": metric_id, "followers": [follower]})
+                      json={"metric_id": metric_id, "followers": [follower]}, timeout=HTTP_TIMEOUT)
     if not r.ok:
         return False, None, r.text[:160]
     subs = r.json().get("subscriptions", [])
@@ -362,13 +366,13 @@ def subscribe(server_url, token, metric_id, follower):
 
 def delete_definition(server_url, token, def_id):
     r = requests.delete(f"{server_url}/api/-/pulse/definitions/{def_id}",
-                        headers={"x-tableau-auth": token, "Accept": "application/json"})
+                        headers={"x-tableau-auth": token, "Accept": "application/json"}, timeout=HTTP_TIMEOUT)
     return r.status_code
 
 
 def delete_subscription(server_url, token, sub_id):
     r = requests.delete(f"{server_url}/api/-/pulse/subscriptions/{sub_id}",
-                        headers={"x-tableau-auth": token, "Accept": "application/json"})
+                        headers={"x-tableau-auth": token, "Accept": "application/json"}, timeout=HTTP_TIMEOUT)
     return r.status_code
 
 
@@ -551,15 +555,18 @@ def execute_deploy(server, server_url, token, ir, plan, *,
         if owned and m.get("description"):
             cur_desc = it.get("target_description", "") if action != "create" else ""
             if m["description"] != cur_desc:
+                log(f"  setting description for {m['name']}...")
                 ok, detail = set_definition_description(server_url, token, def_id, m["description"])
                 if not ok:
                     log(f"    (could not set description for {m['name']}: {detail})")
 
+        log(f"  fetching default metric for {m['name']}...")
         dm = default_metric_for_definition(server_url, token, def_id)
         metric_id = dm["id"] if dm else None
         gran = m.get("default_granularity")
         follow_metric_id = metric_id
         if owned and dm and gran:
+            log(f"  setting period for {m['name']}...")
             rng = m.get("default_range") or defaults.get("default_range", DEFAULT_RANGE)
             ok, detail = set_metric_period(server_url, token, dm, gran, rng)
             if not ok:
@@ -713,7 +720,7 @@ def execute_uninstall(server, server_url, token, uplan, log=_noop):
     grp = uplan.get("group")
     if grp and grp.get("action") == "delete":
         resp = requests.delete(f"{server.baseurl}/sites/{server.site_id}/groups/{grp['id']}",
-                               headers={"x-tableau-auth": token})
+                               headers={"x-tableau-auth": token}, timeout=HTTP_TIMEOUT)
         log(f"  removed group '{grp['name']}': {resp.status_code}")
     if uplan["mode"] == "state":
         path = state_path(server.site_id)
