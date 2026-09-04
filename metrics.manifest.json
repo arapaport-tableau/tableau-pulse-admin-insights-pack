@@ -3,7 +3,7 @@
     "name": "Pulse Admin Insights Starter Pack",
     "version": "1.0.0-draft",
     "description": "Prebuilt Tableau Pulse metric definitions on the standard Admin Insights data sources. Deploy-anywhere, basic specifications only. MVP scope: nine event-log trend metrics across three clusters.",
-    "spec_notes": "Manifest is the tool's intermediate representation. deploy.py resolves each source name to its site LUID at run time and maps these entries to Pulse CreateDefinitionRequest payloads. Filter values marked confirm:true must be verified against live data via query-datasource at build time. Aggregation enums COUNT and COUNT_DISTINCT are provisional pending API confirmation (SUM and AVERAGE are verified from the reference). MVP is deliberately limited to event/activity-log sources (TS Events, Viz Load Times, Job Performance), which retain real history and trend honestly in Pulse. Current-state snapshot sources (TS Users, Site Content, Subscriptions) full-refresh daily and retain no history, so they are held out of the MVP; see deferred sections. Adjustable dimensions are set PER METRIC, not per cluster: each list is drawn from fields that exist on the source, returns real values for that metric (a dimension pinned by the metric's own filter is omitted), and favors low/medium-cardinality categorical fields so Pulse top-contributor insights stay clean. High-cardinality identity fields (Actor User Name, Item LUID, raw Item Name on TS Events) are deliberately excluded as default breakdowns.",
+    "spec_notes": "Manifest is the tool's intermediate representation. deploy.py resolves each source name to its site LUID at run time and maps these entries to Pulse CreateDefinitionRequest payloads. Filter values marked confirm:true must be verified against live data via query-datasource at build time. Aggregation enums COUNT, COUNT_DISTINCT, SUM, and AVERAGE are all confirmed: metrics using each have been created and rendered on a live site. MVP is deliberately limited to event/activity-log sources (TS Events, Viz Load Times, Job Performance), which retain real history and trend honestly in Pulse. Current-state snapshot sources (TS Users, Site Content, Subscriptions) full-refresh daily and retain no history, so they are held out of the MVP; see deferred sections. Adjustable dimensions are set PER METRIC, not per cluster: each list is drawn from fields that exist on the source, returns real values for that metric (a dimension pinned by the metric's own filter is omitted), and favors low/medium-cardinality categorical fields so Pulse top-contributor insights stay clean. High-cardinality identity fields (Actor User Name, Item LUID, raw Item Name on TS Events) are deliberately excluded as default breakdowns.",
     "defaults": {
       "comparison": "TIME_COMPARISON_PREVIOUS_PERIOD",
       "show_insights": true,
@@ -132,7 +132,7 @@
     {
       "key": "content-views",
       "name": "Content Views",
-      "description": "View and access events on content over the period. The core measure of value delivered; higher is better.",
+      "description": "How many times content was accessed over the period. The core measure of value delivered; higher is better. Note: this counts all access events, including automated renders from subscriptions and alerts, so it reflects total views served rather than human views only.",
       "cluster": "adoption",
       "source": "TS Events",
       "why": "How much content is actually being consumed. The core value-delivered metric.",
@@ -205,15 +205,15 @@
       "type": "trend"
     },
     {
-      "key": "new-content-published",
-      "name": "New Content Published",
-      "description": "Publish events over the period. Shows whether the community is producing, not just consuming; higher is better.",
+      "key": "assets-published",
+      "name": "Assets Published",
+      "description": "Distinct pieces of content published during the period, counting each asset once no matter how many times it was republished. Includes both brand-new content and updates to existing content (the event log has no first-publish flag to separate them). Higher is better.",
       "cluster": "adoption",
       "source": "TS Events",
-      "why": "Creation activity. Shows whether the community is producing, not just consuming.",
+      "why": "Creation and update activity. Shows whether the community is producing content, not just consuming it. Counting distinct assets avoids inflating the number when one item is republished many times.",
       "measure": {
-        "field": "Event Id",
-        "aggregation": "AGGREGATION_COUNT"
+        "field": "Item LUID",
+        "aggregation": "AGGREGATION_COUNT_DISTINCT"
       },
       "time_dimension": "Event Date",
       "temporality": null,
@@ -252,14 +252,23 @@
       },
       "time_dimension": "Request Time",
       "temporality": null,
-      "filters": [],
+      "filters": [
+        {
+          "field": "Status Code Type",
+          "include": [
+            "Success"
+          ],
+          "confirm": false,
+          "verified": "Confirmed against live Viz Load Times: the successful-render bucket is 'Success'. Excludes error and redirect responses so the average reflects loads that actually rendered."
+        }
+      ],
       "adjustable_dimensions": [
         "Project Name",
         "Workbook Name",
         "Item Type",
-        "Status Code Type",
         "Item Owner Email"
       ],
+      "dimensions_note": "Status Code Type is pinned to 'Success' by this metric's filter, so it is omitted as a breakdown.",
       "sentiment": "SENTIMENT_TYPE_DOWN_IS_GOOD",
       "number_format": "NUMBER_FORMAT_TYPE_NUMBER",
       "default_granularity": "GRANULARITY_BY_WEEK",
@@ -304,7 +313,7 @@
     {
       "key": "extract-refresh-failures",
       "name": "Extract Refresh Failures",
-      "description": "Failed extract-refresh jobs. Each one points at a specific schedule or item to fix; lower is better.",
+      "description": "Extract-refresh jobs that ended in failure during the period. Final Job Result records only Succeeded or Failed, so this counts every refresh that did not succeed. Each failure points at a specific schedule or item to fix; lower is better.",
       "cluster": "reliability",
       "source": "Job Performance",
       "why": "Failed refreshes mean stale dashboards. The most actionable admin health metric.",
@@ -320,7 +329,8 @@
           "include": [
             "Failed"
           ],
-          "confirm": true
+          "confirm": false,
+          "verified": "Confirmed against live Job Performance metadata: Final Job Result is a two-state calculated field (Succeeded or Failed only). 'Failed' therefore captures every refresh that did not succeed; there are no separate Timed Out or Cancelled values to include."
         },
         {
           "field": "Job Type",
@@ -348,17 +358,26 @@
     {
       "key": "avg-job-duration",
       "name": "Average Job Duration",
-      "description": "Average background job run time. Rising durations are an early warning of capacity pressure; lower is better.",
+      "description": "Average run time of jobs that completed successfully, in seconds. Failed jobs are excluded so aborted or hung runs don't distort the average. Rising durations are an early warning of capacity pressure; lower is better.",
       "cluster": "reliability",
       "source": "Job Performance",
-      "why": "Rising job durations signal capacity pressure before it turns into failures.",
+      "why": "Rising job durations signal capacity pressure before it turns into failures. Measuring only successful runs keeps the average about healthy throughput, not failures.",
       "measure": {
         "field": "Job Duration",
         "aggregation": "AGGREGATION_AVERAGE"
       },
       "time_dimension": "Started At",
       "temporality": null,
-      "filters": [],
+      "filters": [
+        {
+          "field": "Final Job Result",
+          "include": [
+            "Succeeded"
+          ],
+          "confirm": false,
+          "verified": "Confirmed against live Job Performance metadata: Final Job Result is a two-state field (Succeeded or Failed). Filtering to Succeeded measures healthy-job runtime and excludes failures that abort early or hang."
+        }
+      ],
       "adjustable_dimensions": [
         "Job Type",
         "Schedule Name",
