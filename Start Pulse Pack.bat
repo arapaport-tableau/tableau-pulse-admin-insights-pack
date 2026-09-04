@@ -1,4 +1,5 @@
 @echo off
+title Pulse Admin Insights Pack - created by Andy Rapaport
 REM Double-click this on Windows to start the Pulse Admin Insights Pack app.
 REM The first run sets things up (a minute or two). Every run after that is instant.
 cd /d "%~dp0"
@@ -21,6 +22,8 @@ if not exist ".venv" (
   echo.
 )
 
+echo Pulse Admin Insights Pack - created by Andy Rapaport
+echo.
 echo Starting the app. Your browser will open in a moment.
 echo Leave this window open while you use the app. Close it when you're finished.
 echo.

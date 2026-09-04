@@ -13,7 +13,7 @@ lets them feel what Pulse does the day they turn it on.
 > [Using the app](#using-the-app). The command line is only for people who prefer a terminal or are
 > scripting it across many sites ([CLI.md](CLI.md)).
 
-This is an unofficial community tool. It is not built or supported by Tableau or Salesforce.
+Created by Andy Rapaport. This is an unofficial community tool. It is not built or supported by Tableau or Salesforce.
 
 Want the backstory on why I built this and how it fits the way Pulse works? Read
 [The Tableau Pulse Starter Pack That Installs Itself](docs/blog-post.md).

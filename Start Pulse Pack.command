@@ -20,6 +20,8 @@ if [ ! -d ".venv" ]; then
   echo
 fi
 
+echo "Pulse Admin Insights Pack — created by Andy Rapaport"
+echo
 echo "Starting the app. Your browser will open in a moment."
 echo "Leave this window open while you use the app. Close it (or press Ctrl+C) when you're finished."
 echo
