@@ -383,9 +383,9 @@
         "Schedule Name",
         "Item Type",
         "Owner Email",
-        "Final Job Result",
         "Parent Project Name"
       ],
+      "dimensions_note": "Final Job Result is pinned to 'Succeeded' by this metric's filter, so it is omitted as a breakdown.",
       "sentiment": "SENTIMENT_TYPE_DOWN_IS_GOOD",
       "number_format": "NUMBER_FORMAT_TYPE_NUMBER",
       "default_granularity": "GRANULARITY_BY_WEEK",

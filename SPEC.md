@@ -138,17 +138,17 @@ are deliberately narrow — see METRICS.md.
 ### A. Adoption — TS Events, time = Event Date (flagship single conversation)
 1. Active Users — COUNT_DISTINCT [Actor User Name], no filter — up is good. Dims: Actor Site Role, Actor License Role.
 2. Site Logins — COUNT [Event Id], filter Event Name = Login (verified) — up is good. Dims: Actor Site Role, Actor License Role.
-3. Content Views — COUNT [Event Id], filter Item Type = View + Event Type = Access (verified) — up is good. Dims: Project Name, Workbook Name, Item Owner Email, Actor Site Role, Actor License Role.
+3. Content Views — COUNT [Event Id], filter Item Type = View + Event Type = Access (verified) — up is good. Includes automated renders (subscriptions, alerts). Dims: Project Name, Workbook Name, Item Owner Email, Actor Site Role, Actor License Role.
 4. Unique Content Accessed — COUNT_DISTINCT [Item LUID], filter Event Type = Access (verified) — up is good. Dims: Item Type, Project Name.
-5. New Content Published — COUNT [Event Id], filter Event Type = Publish (verified) — up is good. Dims: Item Type, Project Name, Item Owner Email, Actor Site Role, Actor License Role.
+5. Assets Published — COUNT_DISTINCT [Item LUID], filter Event Type = Publish (verified) — up is good. Counts distinct assets (new or updated), not publish events. Dims: Item Type, Project Name, Item Owner Email, Actor Site Role, Actor License Role.
 
 ### B. Performance — Viz Load Times, time = Request Time
-6. Average View Load Time — AVG [Duration], no filter — down is good. Dims: Project Name, Workbook Name, Item Type, Status Code Type, Item Owner Email.
+6. Average View Load Time — AVG [Duration], filter Status Code Type = Success (verified) — down is good. Successful loads only, so error responses don't skew the average. Dims: Project Name, Workbook Name, Item Type, Item Owner Email.
 7. Load Errors — COUNT [Request ID], filter Status Code Type in (Client errors, Server errors) (confirm) — down is good. Dims: Status Code Type, Project Name, Workbook Name, Item Type, Item Owner Email.
 
 ### C. Reliability — Job Performance, time = Started At
-8. Extract Refresh Failures — COUNT [Job ID], filter Final Job Result = Failed + Job Type in (RefreshExtracts, RefreshExtractsViaBridge) (confirmed — Admin Insights uses raw job-type enums; there is no "Extract Refresh" value) — down is good. Dims: Schedule Name, Item Name, Item Type, Owner Email, Was Manual Run, Parent Project Name.
-9. Average Job Duration — AVG [Job Duration], no filter — down is good. Dims: Job Type, Schedule Name, Item Type, Owner Email, Final Job Result, Parent Project Name.
+8. Extract Refresh Failures — COUNT [Job ID], filter Final Job Result = Failed + Job Type in (RefreshExtracts, RefreshExtractsViaBridge) (confirmed — Admin Insights uses raw job-type enums; there is no "Extract Refresh" value. Final Job Result is a two-state field, so Failed captures every non-success) — down is good. Dims: Schedule Name, Item Name, Item Type, Owner Email, Was Manual Run, Parent Project Name.
+9. Average Job Duration — AVG [Job Duration], filter Final Job Result = Succeeded (verified) — down is good. Successful runs only, so failures don't distort healthy-job runtime. Dims: Job Type, Schedule Name, Item Type, Owner Email, Parent Project Name.
 
 Filter values marked (confirm) are set to the standard English Admin Insights values and are
 row-count-validated in `--dry-run` against live data.

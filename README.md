@@ -28,7 +28,7 @@ metric trends and compares period over period from day one.
 - Site Logins
 - Content Views
 - Unique Content Accessed
-- New Content Published
+- Assets Published
 
 **Performance (Viz Load Times)**
 - Average View Load Time
