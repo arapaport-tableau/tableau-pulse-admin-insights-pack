@@ -58,7 +58,7 @@ def state_path(site_id):
 
 
 def load_ir():
-    with open(IR_PATH) as f:
+    with open(IR_PATH, encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -634,10 +634,10 @@ def execute_deploy(server, server_url, token, ir, plan, *,
 def load_state(site_id):
     path = state_path(site_id)
     if os.path.exists(path):
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             return json.load(f)
     if os.path.exists(LEGACY_STATE_PATH):  # migrate old single-site file if it matches this site
-        with open(LEGACY_STATE_PATH) as f:
+        with open(LEGACY_STATE_PATH, encoding="utf-8") as f:
             legacy = json.load(f)
         if legacy.get("site") == site_id:
             return legacy
@@ -645,7 +645,7 @@ def load_state(site_id):
 
 
 def save_state(site_id, state):
-    with open(state_path(site_id), "w") as f:
+    with open(state_path(site_id), "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2)
 
 

@@ -51,7 +51,7 @@ CONFIG_PATH = os.path.join(engine.HERE, "config.json")   # optional creds (gitig
 def load_connection():
     cfg = {}
     if os.path.exists(CONFIG_PATH):
-        with open(CONFIG_PATH) as f:
+        with open(CONFIG_PATH, encoding="utf-8") as f:
             cfg = json.load(f)
 
     def pick(env, key, prompt, default=None, secret=False):
