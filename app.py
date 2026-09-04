@@ -69,7 +69,7 @@ def _display_item(it):
 # ── Pages ────────────────────────────────────────────────────────────────────────
 @app.get("/")
 def index():
-    with open(INDEX_PATH) as f:
+    with open(INDEX_PATH, encoding="utf-8") as f:
         html = f.read().replace("__SESSION_TOKEN__", SESSION_TOKEN)
     return Response(html, mimetype="text/html")
 
